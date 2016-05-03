@@ -3,7 +3,7 @@ using System.IO;
 using Newtonsoft.Json;
 using System.Xml.Serialization;
 using MSWord = Microsoft.Office.Interop.Word;
-using System.Reflection;
+using CsvHelper;
 using System;
 
 namespace Temporal_data_mining_system
@@ -38,6 +38,12 @@ namespace Temporal_data_mining_system
         {
             string json = JsonConvert.SerializeObject(dataList);
             File.WriteAllText(path, json);
+        }
+
+        public static void saveToCSV(string path, List<ExtractedData> datalist)
+        {
+            CsvWriter csvWriter = new CsvWriter(new StreamWriter(path));
+            csvWriter.WriteRecords(datalist);
         }
 
         private static string openWordFile(string path)

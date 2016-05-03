@@ -24,12 +24,13 @@
                 <MenuItem x:Name="menuSave" Header="Save">
                     <MenuItem x:Name="menuSaveToJSON" Header="JSON" Click="menuSaveToJSON_Click"></MenuItem>
                     <MenuItem x:Name="menuSaveToXML" Header="XML" Click="menuSaveToXML_Click"></MenuItem>
+                    <MenuItem x:Name="menuSaveToCSV" Header="CSV" Click="menuSaveToCSV_Click"></MenuItem>
                 </MenuItem>
             </MenuItem>
             <MenuItem x:Name="menuExit" Header="Exit" Click="menuExit_Click"></MenuItem>
         </Menu>
         <!--Tabs-->
-        <TabControl Grid.Row="1" SelectionChanged="TabControl_SelectionChanged">
+        <TabControl x:Name="tabControl" Grid.Row="1" SelectionChanged="TabControl_SelectionChanged">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="Template">
@@ -70,7 +71,7 @@
                     <Border BorderThickness="1" BorderBrush="Black" Margin="10" Grid.Row="1">
                         <TextBlock x:Name="tbInputText" Grid.Column="0" FontFamily="Segoe Print" TextWrapping="WrapWithOverflow" />
                     </Border>
-                    <DataGrid x:Name="dgExtractedData" Margin="0, 10, 10, 10" Grid.Column="1" Grid.Row="1" ItemsSource="{Binding extractedData, ElementName=window, Mode=OneWay}" AutoGenerateColumns="False">
+                    <DataGrid x:Name="dgExtractedData" Margin="0, 10, 10, 10" Grid.Column="1" Grid.Row="1" AutoGenerateColumns="False">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Дата" Width="*" Binding="{Binding Path=Date}"></DataGridTextColumn>
                             <DataGridTextColumn Header="Объект" Width="*" Binding="{Binding Path=Object}"></DataGridTextColumn>
@@ -79,13 +80,30 @@
                         </DataGrid.Columns>
                     </DataGrid>
                     <Button x:Name="bOpenFile" Click="bOpenFile_Click" Grid.Column="0" Grid.Row="2" MaxWidth="200" Margin="3" VerticalAlignment="Stretch">Открыть файл</Button>
-                    <Image x:Name="imageLoading" gif:ImageBehavior.AnimatedSource="img\loading.gif" Grid.Column="1" Grid.Row="1" Visibility="Hidden"></Image>
+                    <Image x:Name="imageLoading" gif:ImageBehavior.AnimatedSource="img\loading.gif" Grid.Column="1" Grid.Row="2" Visibility="Hidden"></Image>
                     <Label Grid.Column="0" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0">Filter</Label>
                     <TextBox x:Name="tbFilter" Grid.Column="1" Grid.Row="0" Margin="5" HorizontalAlignment="Stretch" KeyUp="tbFilter_KeyUp"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Table analyzing">
 
+            </TabItem>
+            <TabItem x:Name="browserTab" Header="Website analyzing">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="35"></RowDefinition>
+                        <RowDefinition Height="9*"></RowDefinition>
+                        <RowDefinition Height="40"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <GridSplitter Grid.Column="0" Grid.Row="0" VerticalAlignment="Stretch" Width="10" Opacity="0" Margin="0"/>
+                    <TextBox x:Name="tbURL" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,5,10,5" KeyUp="tbURL_KeyUp" ></TextBox>
+                    <WebBrowser x:Name="browser" Margin="10" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2"></WebBrowser>
+                    <Button x:Name="bAnalyzePage" Grid.Row="2" Width="100" Height="30" Margin="0,5,0,5" Grid.ColumnSpan="2" Click="bAnalyzePage_Click">Analyze</Button>
+                </Grid>
             </TabItem>
             <TabItem x:Name="treeViewTab" Header="Tree view" Visibility="Hidden">
                 <Grid>

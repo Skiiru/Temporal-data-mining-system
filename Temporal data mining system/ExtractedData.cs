@@ -11,17 +11,24 @@ namespace Temporal_data_mining_system
         [System.ComponentModel.DisplayName("Объект")]
         public string Object { get; set; }
 
-        public List<Word> objects = new List<Word>();
+        public List<Word> objects { get; set; }
 
         [System.ComponentModel.DisplayName("Тенденция")]
         public string Trend { get; set; }
 
-        public List<Word> trends = new List<Word>();
+        public List<Word> trends { get; set; }
 
         [System.ComponentModel.DisplayName("Доп. данные")]
         public string Extra { get; set; }
 
-        public List<Word> extras = new List<Word>();
+        public List<Word> extras { get; set;}
+
+        private void Init()
+        {
+            this.extras = new List<Word>();
+            this.trends = new List<Word>();
+            this.objects = new List<Word>();
+        }
 
         public void AddToObjects(Word word)
         {
@@ -43,11 +50,13 @@ namespace Temporal_data_mining_system
 
         public ExtractedData()
         {
+            Init();
             Date = Object = Trend = Extra = string.Empty;
         }
 
         public ExtractedData(string trend)
         {
+            Init();
             this.Trend = trend;
             Object = Date = Extra = string.Empty;
         }
@@ -61,6 +70,7 @@ namespace Temporal_data_mining_system
 
         public ExtractedData(string obj, string trend, string date)
         {
+            Init();
             this.Object = obj;
             this.Trend = trend;
             this.Date = date;
@@ -68,6 +78,7 @@ namespace Temporal_data_mining_system
 
         public ExtractedData(string obj, string trend, string date, string extra)
         {
+            Init();
             this.Object = obj;
             this.Trend = trend;
             this.Date = date;

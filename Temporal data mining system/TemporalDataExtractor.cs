@@ -47,38 +47,37 @@ namespace Temporal_data_mining_system
         /// <returns></returns>
         public List<ExtractedData> parse(string text, StanfordCoreNLP pipeline, AnnotationPipeline sutimePipeline)
         {
-            // Annotation
-            var annotation = new Annotation(text);
-            pipeline.annotate(annotation);
-
-            var sentences = annotation.get(typeof(CoreAnnotations.SentencesAnnotation));
-            string res = string.Empty;
-
-            List<ExtractedData> lstOfData = new List<ExtractedData>();
-            foreach (Annotation sentence in sentences as ArrayList)
+            if (text != null)
             {
-                List<string> date = new List<string>();
-                //Извлечение данных
-                Sentence s = Sentence.GetTemporal(sentence.toString(), sutimePipeline);
-                if (s != null)
-                {
-                    SemanticGraph dependencies = sentence.get(typeof(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation)) as SemanticGraph;
-                    s.SentenceWithPOS = dependencies.toEnUncollapsedSentenceString();
-                    s.ExtractedTemporalData = ParseSemanticGraph(ref s, dependencies, s.Dates);
-                    s.PrepareValues();
-                    lstOfData.AddRange(s.ExtractedTemporalData);
+                // Annotation
+                var annotation = new Annotation(text);
+                pipeline.annotate(annotation);
 
-                    //string toParse = dependencies.toCompactString(true);
-                    //List<ExtractedData> dtList = this.parseSentence(s);
-                    //if (dtList != null)
-                    //    foreach (ExtractedData dt in dtList)
-                    //        lstOfData.Add(dt);
+                var sentences = annotation.get(typeof(CoreAnnotations.SentencesAnnotation));
+                string res = string.Empty;
+
+                List<ExtractedData> lstOfData = new List<ExtractedData>();
+                foreach (Annotation sentence in sentences as ArrayList)
+                {
+                    List<string> date = new List<string>();
+                    //Извлечение данных
+                    Sentence s = Sentence.GetTemporal(sentence.toString(), sutimePipeline);
+                    if (s != null)
+                    {
+                        SemanticGraph dependencies = sentence.get(typeof(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation)) as SemanticGraph;
+                        s.SentenceWithPOS = dependencies.toEnUncollapsedSentenceString();
+                        s.ExtractedTemporalData = ParseSemanticGraph(ref s, dependencies, s.Dates);
+                        s.PrepareValues();
+                        lstOfData.AddRange(s.ExtractedTemporalData);
+                    }
+
+                    //var documentCoref = annotation.get(typeof(CorefCoreAnnotations.CorefChainAnnotation));
                 }
 
-                //var documentCoref = annotation.get(typeof(CorefCoreAnnotations.CorefChainAnnotation));
+                return lstOfData;
             }
-
-            return lstOfData;
+            else
+                return null;
 
         }
 

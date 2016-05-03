@@ -6,6 +6,7 @@ using System.Windows;
 
 using Microsoft.Win32;
 using System.Windows.Controls;
+using mshtml;
 
 namespace Temporal_data_mining_system
 {
@@ -37,7 +38,6 @@ namespace Temporal_data_mining_system
         #region Custom functions
         private void ActivateItems()
         {
-            this.treeView.Items.Clear();
             //TODO: commands
         }
 
@@ -46,8 +46,10 @@ namespace Temporal_data_mining_system
             this.treeViewTab.Visibility = Visibility.Hidden;
         }
 
-        private void FillTreeDictionary()
+        private void FillTree()
         {
+            this.treeView.Items.Clear();
+            this.extractedDataForTree.Clear();
             if (this.extractedData != null && this.extractedData.Count > 0)
             {
                 foreach (ExtractedData data in this.extractedData)
@@ -97,24 +99,11 @@ namespace Temporal_data_mining_system
                 }
             }
         }
-        #endregion
 
-        #region Events
-        private void menuExit_Click(object sender, RoutedEventArgs e)
+        private void loadPipelines()
         {
-            Application.Current.Shutdown();
-        }
-
-        private void menuService_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void bOpenFile_Click(object sender, RoutedEventArgs e)
-        {
-            ofdTextFile.ShowDialog();
-            DeactivateItems();
             this.imageLoading.Visibility = Visibility.Visible;
+            Dispatcher.BeginInvoke((Action)(() => this.tabControl.SelectedIndex = 0));
             if (this.pipeline == null || this.sutimePipeline == null)
                 Task<Boolean>.Factory.StartNew(() =>
                 {
@@ -133,57 +122,69 @@ namespace Temporal_data_mining_system
                 {
                     if (flag.Result)
                     {
-                        text = FileManager.ReadFile(ofdTextFile.FileName);
-                        this.tbInputText.Text = text;
                         TemporalDataExtractor temporalExtractor = new TemporalDataExtractor();
                         extractedData = temporalExtractor.parse(text, pipeline, sutimePipeline);
-                        this.dgExtractedData.Items.Clear();
-                        foreach (ExtractedData data in extractedData)
-                        {
-                            this.dgExtractedData.Items.Add(data);
-                        }
+                        this.dgExtractedData.ItemsSource = extractedData;
                     }
                     else
                         MessageBox.Show("Error in loading language models or creating pipelines.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
-                    this.imageLoading.Visibility = Visibility.Hidden;
                     if (this.extractedData != null && this.extractedData.Count > 0)
                     {
                         this.treeViewTab.Visibility = Visibility.Visible;
-                        FillTreeDictionary();
+                        FillTree();
                     }
+                    this.imageLoading.Visibility = Visibility.Hidden;
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             else
             {
                 try
                 {
-                    text = FileManager.ReadFile(ofdTextFile.FileName);
-                    this.tbInputText.Text = text;
                     TemporalDataExtractor temporalExtractor = new TemporalDataExtractor();
                     extractedData = temporalExtractor.parse(text, pipeline, sutimePipeline);
-                    this.dgExtractedData.Items.Clear();
-                    foreach (ExtractedData data in extractedData)
-                    {
-                        this.dgExtractedData.Items.Add(data);
-                    }
+                    this.dgExtractedData.ItemsSource = extractedData;
                     if (this.extractedData != null && this.extractedData.Count > 0)
                     {
                         this.treeViewTab.Visibility = Visibility.Visible;
-                        FillTreeDictionary();
+                        FillTree();
                     }
+                    this.imageLoading.Visibility = Visibility.Hidden;
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message, "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                    this.imageLoading.Visibility = Visibility.Hidden;
                 }
-                this.imageLoading.Visibility = Visibility.Hidden;
             }
+            
+        }
+        #endregion
+
+        #region Events
+        private void menuExit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
+        private void menuService_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void bOpenFile_Click(object sender, RoutedEventArgs e)
+        {
+            ofdTextFile.ShowDialog();
+            DeactivateItems();
+            text = FileManager.ReadFile(ofdTextFile.FileName);
+            this.tbInputText.Text = text;
+            this.imageLoading.Visibility = Visibility.Visible;
+            loadPipelines();
+            this.imageLoading.Visibility = Visibility.Hidden;
             ActivateItems();
         }
 
         private void TabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
         }
-        #endregion
 
         private void menuSaveToJSON_Click(object sender, RoutedEventArgs e)
         {
@@ -221,6 +222,58 @@ namespace Temporal_data_mining_system
             {
                 FilterData(this.tbFilter.Text);
             }
+        }
+
+        private void menuSaveToCSV_Click(object sender, RoutedEventArgs e)
+        {
+            this.sfdResult.Filter = "CSV|*.csv";
+            this.sfdResult.ShowDialog();
+            List<ExtractedData> dataForSave = new List<ExtractedData>();
+            foreach (ExtractedData data in this.dgExtractedData.Items)
+            {
+                dataForSave.Add(data);
+            }
+            if (dataForSave != null && dataForSave.Count > 0 && this.sfdResult.FileName != string.Empty)
+            {
+                FileManager.saveToXML(sfdResult.FileName, dataForSave);
+            }
+        }
+        #endregion
+
+        private void tbURL_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if(e.Key == System.Windows.Input.Key.Enter)
+            {
+                this.browser.Source = new Uri(this.tbURL.Text);
+            }
+        }
+
+        private void bAnalyzePage_Click(object sender, RoutedEventArgs e)
+        {
+            DeactivateItems();
+            try
+            {
+                var doc = this.browser.Document as HTMLDocument;
+                if (doc != null)
+                {
+                    var currentSelection = doc.selection;
+                    if (currentSelection != null)
+                    {
+                        var selectionRange = currentSelection.createRange();
+                        if (selectionRange != null)
+                        {
+                            this.text = selectionRange.Text;
+                            this.tbInputText.Text = this.text;
+                        }
+                    }
+                }
+                loadPipelines();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            ActivateItems();
         }
     }
 }
