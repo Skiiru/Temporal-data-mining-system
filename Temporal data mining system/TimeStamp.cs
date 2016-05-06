@@ -8,9 +8,9 @@
 
         public TimeStamp(string type, string text, int index)
         {
-            this.Type = type;
-            this.OriginalText = text;
-            this.Index = index;
+            Type = type;
+            OriginalText = text;
+            Index = index;
         }
     }
 }

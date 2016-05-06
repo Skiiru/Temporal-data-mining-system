@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
-
 using Microsoft.Win32;
 using System.Windows.Controls;
 using mshtml;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace Temporal_data_mining_system
 {
@@ -22,7 +22,8 @@ namespace Temporal_data_mining_system
         string text;
         OpenFileDialog ofdTextFile;
         SaveFileDialog sfdResult;
-        Dictionary<string, List<ExtractedData>> extractedDataForTree;
+        Dictionary<string, List<ExtractedData>> extractedDataByObject;
+        Dictionary<string, List<ExtractedData>> extractedDataByDate;
 
         public MainWindow()
         {
@@ -31,8 +32,9 @@ namespace Temporal_data_mining_system
             text = String.Empty;
             ofdTextFile = new OpenFileDialog();
             sfdResult = new SaveFileDialog();
-            extractedDataForTree = new Dictionary<string, List<ExtractedData>>();
+            extractedDataByObject = new Dictionary<string, List<ExtractedData>>();
             filtredData = new List<ExtractedData>();
+            extractedDataByDate = new Dictionary<string, List<ExtractedData>>();
         }
 
         #region Custom functions
@@ -43,36 +45,49 @@ namespace Temporal_data_mining_system
 
         private void DeactivateItems()
         {
-            this.treeViewTab.Visibility = Visibility.Hidden;
+            treeViewTab.Visibility = Visibility.Hidden;
+            graphicTab.Visibility = Visibility.Hidden;
         }
 
-        private void FillTree()
+        private void FillDictionaris()
         {
-            this.treeView.Items.Clear();
-            this.extractedDataForTree.Clear();
-            if (this.extractedData != null && this.extractedData.Count > 0)
+            treeView.Items.Clear();
+            extractedDataByObject.Clear();
+            if (extractedData != null && extractedData.Count > 0)
             {
-                foreach (ExtractedData data in this.extractedData)
+                foreach (ExtractedData data in extractedData)
                 {
-                    if (this.extractedDataForTree.ContainsKey(data.Object))
-                        this.extractedDataForTree[data.Object].Add(data);
+                    //object
+                    if (extractedDataByObject.ContainsKey(data.Object))
+                        extractedDataByObject[data.Object].Add(data);
                     else
                     {
                         List<ExtractedData> newList = new List<ExtractedData>();
                         newList.Add(data);
-                        this.extractedDataForTree.Add(data.Object, newList);
+                        extractedDataByObject.Add(data.Object, newList);
+                    }
+                    //date
+                    if (extractedDataByDate.ContainsKey(data.Date))
+                        extractedDataByDate[data.Date].Add(data);
+                    else
+                    {
+                        List<ExtractedData> newList = new List<ExtractedData>();
+                        newList.Add(data);
+                        extractedDataByDate.Add(data.Date, newList);
                     }
                 }
             }
-            foreach (KeyValuePair<string, List<ExtractedData>> kvp in this.extractedDataForTree)
+            //creating tree tab
+            foreach (KeyValuePair<string, List<ExtractedData>> kvp in extractedDataByObject)
             {
                 TreeViewItem item = new TreeViewItem();
-                item.Header = kvp.Key;
+                string end = kvp.Value.Count == 1 ? " item)" : " items)";
+                item.Header = kvp.Key + "(" + kvp.Value.Count + end;
                 foreach (ExtractedData data in kvp.Value)
                 {
                     item.Items.Add(data.Date + ": " + data.Trend);
                 }
-                this.treeView.Items.Add(item);
+                treeView.Items.Add(item);
             }
         }
 
@@ -80,37 +95,37 @@ namespace Temporal_data_mining_system
         {
             if (filter != string.Empty)
             {
-                this.filtredData = ExtractedData.Filter(this.extractedData, filter);
-                if (this.filtredData != null)
+                filtredData = ExtractedData.Filter(extractedData, filter);
+                if (filtredData != null)
                 {
-                    this.dgExtractedData.Items.Clear();
-                    foreach (ExtractedData data in this.filtredData)
+                    dgExtractedData.Items.Clear();
+                    foreach (ExtractedData data in filtredData)
                     {
-                        this.dgExtractedData.Items.Add(data);
+                        dgExtractedData.Items.Add(data);
                     }
                 }
             }
             else
             {
-                this.dgExtractedData.Items.Clear();
-                foreach (ExtractedData data in this.extractedData)
+                dgExtractedData.Items.Clear();
+                foreach (ExtractedData data in extractedData)
                 {
-                    this.dgExtractedData.Items.Add(data);
+                    dgExtractedData.Items.Add(data);
                 }
             }
         }
 
         private void loadPipelines()
         {
-            this.imageLoading.Visibility = Visibility.Visible;
-            Dispatcher.BeginInvoke((Action)(() => this.tabControl.SelectedIndex = 0));
-            if (this.pipeline == null || this.sutimePipeline == null)
+            imageLoading.Visibility = Visibility.Visible;
+            Dispatcher.BeginInvoke((Action)(() => tabControl.SelectedIndex = 0));
+            if (pipeline == null || sutimePipeline == null)
                 Task<Boolean>.Factory.StartNew(() =>
                 {
                     try
                     {
-                        this.sutimePipeline = Sentence.GetTemporalPipeline();
-                        this.pipeline = TemporalDataExtractor.GetPipeline();
+                        sutimePipeline = Sentence.GetTemporalPipeline();
+                        pipeline = TemporalDataExtractor.GetPipeline();
                         return true;
                     }
                     catch
@@ -124,16 +139,17 @@ namespace Temporal_data_mining_system
                     {
                         TemporalDataExtractor temporalExtractor = new TemporalDataExtractor();
                         extractedData = temporalExtractor.parse(text, pipeline, sutimePipeline);
-                        this.dgExtractedData.ItemsSource = extractedData;
+                        dgExtractedData.ItemsSource = extractedData;
                     }
                     else
                         MessageBox.Show("Error in loading language models or creating pipelines.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
-                    if (this.extractedData != null && this.extractedData.Count > 0)
+                    if (extractedData != null && extractedData.Count > 0)
                     {
-                        this.treeViewTab.Visibility = Visibility.Visible;
-                        FillTree();
+                        treeViewTab.Visibility = Visibility.Visible;
+                        graphicTab.Visibility = Visibility.Visible;
+                        FillDictionaris();
                     }
-                    this.imageLoading.Visibility = Visibility.Hidden;
+                    imageLoading.Visibility = Visibility.Hidden;
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             else
             {
@@ -141,21 +157,22 @@ namespace Temporal_data_mining_system
                 {
                     TemporalDataExtractor temporalExtractor = new TemporalDataExtractor();
                     extractedData = temporalExtractor.parse(text, pipeline, sutimePipeline);
-                    this.dgExtractedData.ItemsSource = extractedData;
-                    if (this.extractedData != null && this.extractedData.Count > 0)
+                    dgExtractedData.ItemsSource = extractedData;
+                    if (extractedData != null && extractedData.Count > 0)
                     {
-                        this.treeViewTab.Visibility = Visibility.Visible;
-                        FillTree();
+                        treeViewTab.Visibility = Visibility.Visible;
+                        graphicTab.Visibility = Visibility.Visible;
+                        FillDictionaris();
                     }
-                    this.imageLoading.Visibility = Visibility.Hidden;
+                    imageLoading.Visibility = Visibility.Hidden;
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message, "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
-                    this.imageLoading.Visibility = Visibility.Hidden;
+                    imageLoading.Visibility = Visibility.Hidden;
                 }
             }
-            
+
         }
         #endregion
 
@@ -175,10 +192,9 @@ namespace Temporal_data_mining_system
             ofdTextFile.ShowDialog();
             DeactivateItems();
             text = FileManager.ReadFile(ofdTextFile.FileName);
-            this.tbInputText.Text = text;
-            this.imageLoading.Visibility = Visibility.Visible;
+            tbInputText.Text = text;
+            imageLoading.Visibility = Visibility.Visible;
             loadPipelines();
-            this.imageLoading.Visibility = Visibility.Hidden;
             ActivateItems();
         }
 
@@ -188,14 +204,14 @@ namespace Temporal_data_mining_system
 
         private void menuSaveToJSON_Click(object sender, RoutedEventArgs e)
         {
-            this.sfdResult.Filter = "JSON|*.json";
-            this.sfdResult.ShowDialog();
+            sfdResult.Filter = "JSON|*.json";
+            sfdResult.ShowDialog();
             List<ExtractedData> dataForSave = new List<ExtractedData>();
-            foreach(ExtractedData data in this.dgExtractedData.Items)
+            foreach (ExtractedData data in dgExtractedData.Items)
             {
                 dataForSave.Add(data);
             }
-            if (dataForSave != null && dataForSave.Count > 0 && this.sfdResult.FileName != string.Empty)
+            if (dataForSave != null && dataForSave.Count > 0 && sfdResult.FileName != string.Empty)
             {
                 FileManager.saveToJSON(sfdResult.FileName, dataForSave);
             }
@@ -203,14 +219,14 @@ namespace Temporal_data_mining_system
 
         private void menuSaveToXML_Click(object sender, RoutedEventArgs e)
         {
-            this.sfdResult.Filter = "XML|*.xml";
-            this.sfdResult.ShowDialog();
+            sfdResult.Filter = "XML|*.xml";
+            sfdResult.ShowDialog();
             List<ExtractedData> dataForSave = new List<ExtractedData>();
-            foreach (ExtractedData data in this.dgExtractedData.Items)
+            foreach (ExtractedData data in dgExtractedData.Items)
             {
                 dataForSave.Add(data);
             }
-            if (dataForSave != null && dataForSave.Count > 0 && this.sfdResult.FileName!=string.Empty)
+            if (dataForSave != null && dataForSave.Count > 0 && sfdResult.FileName != string.Empty)
             {
                 FileManager.saveToXML(sfdResult.FileName, dataForSave);
             }
@@ -218,33 +234,32 @@ namespace Temporal_data_mining_system
 
         private void tbFilter_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if(e.Key == System.Windows.Input.Key.Enter && this.tbFilter.Text !=string.Empty)
+            if (e.Key == System.Windows.Input.Key.Enter && tbFilter.Text != string.Empty)
             {
-                FilterData(this.tbFilter.Text);
+                FilterData(tbFilter.Text);
             }
         }
 
         private void menuSaveToCSV_Click(object sender, RoutedEventArgs e)
         {
-            this.sfdResult.Filter = "CSV|*.csv";
-            this.sfdResult.ShowDialog();
+            sfdResult.Filter = "CSV|*.csv";
+            sfdResult.ShowDialog();
             List<ExtractedData> dataForSave = new List<ExtractedData>();
-            foreach (ExtractedData data in this.dgExtractedData.Items)
+            foreach (ExtractedData data in dgExtractedData.Items)
             {
                 dataForSave.Add(data);
             }
-            if (dataForSave != null && dataForSave.Count > 0 && this.sfdResult.FileName != string.Empty)
+            if (dataForSave != null && dataForSave.Count > 0 && sfdResult.FileName != string.Empty)
             {
                 FileManager.saveToXML(sfdResult.FileName, dataForSave);
             }
         }
-        #endregion
 
         private void tbURL_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if(e.Key == System.Windows.Input.Key.Enter)
+            if (e.Key == System.Windows.Input.Key.Enter)
             {
-                this.browser.Source = new Uri(this.tbURL.Text);
+                browser.Source = new Uri(tbURL.Text);
             }
         }
 
@@ -253,7 +268,7 @@ namespace Temporal_data_mining_system
             DeactivateItems();
             try
             {
-                var doc = this.browser.Document as HTMLDocument;
+                var doc = browser.Document as HTMLDocument;
                 if (doc != null)
                 {
                     var currentSelection = doc.selection;
@@ -262,8 +277,8 @@ namespace Temporal_data_mining_system
                         var selectionRange = currentSelection.createRange();
                         if (selectionRange != null)
                         {
-                            this.text = selectionRange.Text;
-                            this.tbInputText.Text = this.text;
+                            text = selectionRange.Text;
+                            tbInputText.Text = text;
                         }
                     }
                 }
@@ -275,5 +290,75 @@ namespace Temporal_data_mining_system
             }
             ActivateItems();
         }
+
+        private void cbGraphicType_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //chart is null when this event handles for first time
+            if (chart != null)
+            {
+                ComboBoxItem selected = ((sender as ComboBox).SelectedItem as ComboBoxItem);
+                //Not switch cause it's not support dynamic cases (names) and custom classes
+                if (selected == cbiNone)
+                {
+                    chart.Series.Clear();
+                }
+                else if (selected == cbiObjects)
+                {
+                    chart.Series.Clear();
+                    if (extractedDataByObject != null && extractedDataByObject.Count > 0)
+                    {
+                        chart.ChartAreas.Add(new ChartArea("Default"));
+
+                        // Добавим линию, и назначим ее в ранее созданную область "Default"
+                        Series series = new Series("Count");
+                        series.ChartArea = "Default";
+                        series.ChartType = SeriesChartType.Column;
+
+                        // добавим данные линии
+                        List<String> axisXData = new List<String>();
+                        List<double> axisYData = new List<double>();
+                        series.Points.DataBindXY(axisXData, axisYData);
+
+                        foreach (KeyValuePair<string, List<ExtractedData>> kvp in extractedDataByObject)
+                        {
+                            axisXData.Add(kvp.Key);
+                            axisYData.Add(kvp.Value.Count);
+  
+                        }
+                        series.Points.DataBindXY(axisXData, axisYData);
+                        chart.Series.Add(series);
+                    }
+                }
+                else if (selected == cbiDates)
+                {
+                    chart.Series.Clear();
+                    if (extractedDataByDate != null && extractedDataByDate.Count > 0)
+                    {
+                        chart.ChartAreas.Add(new ChartArea("Default"));
+
+                        // Добавим линию, и назначим ее в ранее созданную область "Default"
+                        Series series = new Series("Count");
+                        series.ChartArea = "Default";
+                        series.ChartType = SeriesChartType.Column;
+
+                        // добавим данные линии
+                        List<String> axisXData = new List<String>();
+                        List<double> axisYData = new List<double>();
+                        series.Points.DataBindXY(axisXData, axisYData);
+
+                        foreach (KeyValuePair<string, List<ExtractedData>> kvp in extractedDataByDate)
+                        {
+                            axisXData.Add(kvp.Key);
+                            axisYData.Add(kvp.Value.Count);
+
+                        }
+                        series.Points.DataBindXY(axisXData, axisYData);
+                        chart.Series.Add(series);
+                    }
+
+                }
+            }
+        }
+        #endregion
     }
 }

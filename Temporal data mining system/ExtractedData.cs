@@ -25,27 +25,27 @@ namespace Temporal_data_mining_system
 
         private void Init()
         {
-            this.extras = new List<Word>();
-            this.trends = new List<Word>();
-            this.objects = new List<Word>();
+            extras = new List<Word>();
+            trends = new List<Word>();
+            objects = new List<Word>();
         }
 
         public void AddToObjects(Word word)
         {
-            if (!this.objects.Contains(word))
-                this.objects.Add(word);
+            if (!objects.Contains(word))
+                objects.Add(word);
         }
 
         public void AddToTrends(Word word)
         {
-            if (!this.trends.Contains(word))
-                this.trends.Add(word);
+            if (!trends.Contains(word))
+                trends.Add(word);
         }
 
         public void AddToExtras(Word word)
         {
-            if (!this.extras.Contains(word))
-                this.extras.Add(word);
+            if (!extras.Contains(word))
+                extras.Add(word);
         }
 
         public ExtractedData()
@@ -57,42 +57,42 @@ namespace Temporal_data_mining_system
         public ExtractedData(string trend)
         {
             Init();
-            this.Trend = trend;
+            Trend = trend;
             Object = Date = Extra = string.Empty;
         }
 
         public ExtractedData(string obj, string trend)
         {
-            this.Object = obj;
-            this.Trend = trend;
-            this.Date = string.Empty;
+            Object = obj;
+            Trend = trend;
+            Date = string.Empty;
         }
 
         public ExtractedData(string obj, string trend, string date)
         {
             Init();
-            this.Object = obj;
-            this.Trend = trend;
-            this.Date = date;
+            Object = obj;
+            Trend = trend;
+            Date = date;
         }
 
         public ExtractedData(string obj, string trend, string date, string extra)
         {
             Init();
-            this.Object = obj;
-            this.Trend = trend;
-            this.Date = date;
-            this.Extra = extra;
+            Object = obj;
+            Trend = trend;
+            Date = date;
+            Extra = extra;
         }
 
         public bool isValidWithoutDate()
         {
-            return !(this.Object == string.Empty || this.Trend == string.Empty);
+            return !(Object == string.Empty || Trend == string.Empty);
         }
 
         public bool isValid()
         {
-            return !(this.Object == string.Empty || this.Trend == string.Empty || this.Date == string.Empty);
+            return !(Object == string.Empty || Trend == string.Empty || Date == string.Empty);
         }
 
         public static List<ExtractedData> Filter(List<ExtractedData> dataList, string filter)

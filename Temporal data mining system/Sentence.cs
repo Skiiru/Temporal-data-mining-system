@@ -21,45 +21,45 @@ namespace Temporal_data_mining_system
 
         public Sentence()
         {
-            this.SentenceText = string.Empty;
-            this.SentenceWithPOS = string.Empty;
-            this.Dates = new List<TimeStamp>();
-            this.Words = new List<Word>();
+            SentenceText = string.Empty;
+            SentenceWithPOS = string.Empty;
+            Dates = new List<TimeStamp>();
+            Words = new List<Word>();
         }
 
         public bool HaveCC()
         {
-            return this.Words.Find(w => w.EdgeRelation == "CC") != null;
+            return Words.Find(w => w.EdgeRelation == "CC") != null;
         }
 
         public void NormilizeText()
         {
             //this.NormilizedSentenceText = Regex.Replace(this.SentenceText, @"[^a-zA-Z0-9]", " ");
             bool afterDigit = false;
-            for (int i = 0; i < this.SentenceText.Length; ++i)
+            for (int i = 0; i < SentenceText.Length; ++i)
             {
-                if (Char.IsLetterOrDigit(this.SentenceText[i]) || Char.IsWhiteSpace(this.SentenceText[i]))
+                if (Char.IsLetterOrDigit(SentenceText[i]) || Char.IsWhiteSpace(SentenceText[i]))
                 {
-                    this.NormilizedSentenceText += this.SentenceText[i];
-                    afterDigit = Char.IsDigit(this.SentenceText[i]);
+                    NormilizedSentenceText += SentenceText[i];
+                    afterDigit = Char.IsDigit(SentenceText[i]);
                 }
-                else if (afterDigit && (new List<char> { '.', ':', '/' }).Contains(this.SentenceText[i]))
-                    this.NormilizedSentenceText += this.SentenceText[i];
-                else if (new List<char> { '%', '$', '€', '\\' }.Contains(this.SentenceText[i]))
-                    this.NormilizedSentenceText += ' ' + Char.ConvertFromUtf32(this.SentenceText[i]) + ' ';
-                else if (this.SentenceText[i] == '\'')
-                    this.NormilizedSentenceText += @" '";
+                else if (afterDigit && (new List<char> { '.', ':', '/' }).Contains(SentenceText[i]))
+                    NormilizedSentenceText += SentenceText[i];
+                else if (new List<char> { '%', '$', '€', '\\' }.Contains(SentenceText[i]))
+                    NormilizedSentenceText += ' ' + Char.ConvertFromUtf32(SentenceText[i]) + ' ';
+                else if (SentenceText[i] == '\'')
+                    NormilizedSentenceText += @" '";
                 else
-                    this.NormilizedSentenceText += ' ';
+                    NormilizedSentenceText += ' ';
             }
-            this.NormilizedSentenceText.Trim();
-            this.NormilizedSentenceText = this.NormilizedSentenceText.Remove(this.NormilizedSentenceText.Length - 1);
+            NormilizedSentenceText.Trim();
+            NormilizedSentenceText = NormilizedSentenceText.Remove(NormilizedSentenceText.Length - 1);
         }
 
         public void AddToWords(Word word)
         {
-            if (!this.Words.Contains(word))
-                this.Words.Add(word);
+            if (!Words.Contains(word))
+                Words.Add(word);
         }
 
         /// <summary>
@@ -136,10 +136,10 @@ namespace Temporal_data_mining_system
 
         public void PrepareValues()
         {
-            var sentenceWords = this.NormilizedSentenceText.Split(' ');
-            foreach (Word word in this.Words)
+            var sentenceWords = NormilizedSentenceText.Split(' ');
+            foreach (Word word in Words)
             {
-                word.Index = this.NormilizedSentenceText.IndexOf(word.word);
+                word.Index = NormilizedSentenceText.IndexOf(word.word);
             }
             int ccIndex = int.MaxValue;
             bool addToLastItem = false;
@@ -147,105 +147,105 @@ namespace Temporal_data_mining_system
             {
                 if (!(string.IsNullOrEmpty(word) || string.IsNullOrWhiteSpace(word)))
                 {
-                    Word currentWord = this.Words.Find(w => w.word == word);
-                    TimeStamp currentPartOfDate = this.Dates.Find(d => d.Index == currentWord.Index);
+                    Word currentWord = Words.Find(w => w.word == word);
+                    TimeStamp currentPartOfDate = Dates.Find(d => d.Index == currentWord.Index);
                     if (currentWord.EdgeRelation == "cc")
                     {
                         ccIndex = currentWord.Index;
                         addToLastItem = false;
                     }
-                    for (int dataIndex = 0; dataIndex < this.ExtractedTemporalData.Count; ++dataIndex)
+                    for (int dataIndex = 0; dataIndex < ExtractedTemporalData.Count; ++dataIndex)
                     {
                         if (currentPartOfDate == null)
                         {
-                            bool lastIndex = dataIndex == this.ExtractedTemporalData.Count - 1;
-                            for (int i = 0; i < this.ExtractedTemporalData[dataIndex].objects.Count; ++i)
+                            bool lastIndex = dataIndex == ExtractedTemporalData.Count - 1;
+                            for (int i = 0; i < ExtractedTemporalData[dataIndex].objects.Count; ++i)
                             {
-                                if (word == this.ExtractedTemporalData[dataIndex].objects[i].word)
+                                if (word == ExtractedTemporalData[dataIndex].objects[i].word)
                                 {
-                                    if (this.ExtractedTemporalData[dataIndex].objects[i].Index > ccIndex)
+                                    if (ExtractedTemporalData[dataIndex].objects[i].Index > ccIndex)
                                     {
                                         if (addToLastItem)
                                         {
                                             if (!lastIndex)
                                             {
-                                                this.ExtractedTemporalData[dataIndex + 1].objects.AddRange(this.ExtractedTemporalData[dataIndex].objects.GetRange(i, this.ExtractedTemporalData[dataIndex].objects.Count - i));
-                                                this.ExtractedTemporalData[dataIndex].objects.RemoveRange(i, this.ExtractedTemporalData[dataIndex].objects.Count - i);
+                                                ExtractedTemporalData[dataIndex + 1].objects.AddRange(ExtractedTemporalData[dataIndex].objects.GetRange(i, ExtractedTemporalData[dataIndex].objects.Count - i));
+                                                ExtractedTemporalData[dataIndex].objects.RemoveRange(i, ExtractedTemporalData[dataIndex].objects.Count - i);
                                             }
                                             else
-                                                this.ExtractedTemporalData[dataIndex].Object += this.ExtractedTemporalData[dataIndex].objects[i].word + ' ';
+                                                ExtractedTemporalData[dataIndex].Object += ExtractedTemporalData[dataIndex].objects[i].word + ' ';
                                         }
                                         else
                                         {
                                             ExtractedData newData = new ExtractedData();
-                                            newData.objects.AddRange(this.ExtractedTemporalData[dataIndex].objects.GetRange(i, this.ExtractedTemporalData[dataIndex].objects.Count - i));
-                                            this.ExtractedTemporalData[dataIndex].objects.RemoveRange(i, this.ExtractedTemporalData[dataIndex].objects.Count - i);
-                                            this.ExtractedTemporalData.Add(newData);
+                                            newData.objects.AddRange(ExtractedTemporalData[dataIndex].objects.GetRange(i, ExtractedTemporalData[dataIndex].objects.Count - i));
+                                            ExtractedTemporalData[dataIndex].objects.RemoveRange(i, ExtractedTemporalData[dataIndex].objects.Count - i);
+                                            ExtractedTemporalData.Add(newData);
                                             addToLastItem = true;
                                         }
                                     }
                                     else
-                                        this.ExtractedTemporalData[dataIndex].Object += this.ExtractedTemporalData[dataIndex].objects[i].word + ' ';
+                                        ExtractedTemporalData[dataIndex].Object += ExtractedTemporalData[dataIndex].objects[i].word + ' ';
                                 }
                             }
-                            for (int i = 0; i < this.ExtractedTemporalData[dataIndex].trends.Count; ++i)
+                            for (int i = 0; i < ExtractedTemporalData[dataIndex].trends.Count; ++i)
                             {
-                                if (word == this.ExtractedTemporalData[dataIndex].trends[i].word)
-                                    if (this.ExtractedTemporalData[dataIndex].trends[i].Index > ccIndex)
+                                if (word == ExtractedTemporalData[dataIndex].trends[i].word)
+                                    if (ExtractedTemporalData[dataIndex].trends[i].Index > ccIndex)
                                     {
                                         if (addToLastItem)
                                         {
                                             if (!lastIndex)
                                             {
-                                                this.ExtractedTemporalData[dataIndex + 1].trends.AddRange(this.ExtractedTemporalData[dataIndex].trends.GetRange(i, this.ExtractedTemporalData[dataIndex].trends.Count - i));
-                                                this.ExtractedTemporalData[dataIndex].trends.RemoveRange(i, this.ExtractedTemporalData[dataIndex].trends.Count - i);
+                                                ExtractedTemporalData[dataIndex + 1].trends.AddRange(ExtractedTemporalData[dataIndex].trends.GetRange(i, ExtractedTemporalData[dataIndex].trends.Count - i));
+                                                ExtractedTemporalData[dataIndex].trends.RemoveRange(i, ExtractedTemporalData[dataIndex].trends.Count - i);
                                             }
                                             else
-                                                this.ExtractedTemporalData[dataIndex].Trend += this.ExtractedTemporalData[dataIndex].trends[i].word + ' ';
+                                                ExtractedTemporalData[dataIndex].Trend += ExtractedTemporalData[dataIndex].trends[i].word + ' ';
                                         }
                                         else
                                         {
                                             ExtractedData newData = new ExtractedData();
-                                            newData.trends.AddRange(this.ExtractedTemporalData[dataIndex].trends.GetRange(i, this.ExtractedTemporalData[dataIndex].trends.Count - i));
-                                            this.ExtractedTemporalData[dataIndex].trends.RemoveRange(i, this.ExtractedTemporalData[dataIndex].trends.Count - i);
-                                            this.ExtractedTemporalData.Add(newData);
+                                            newData.trends.AddRange(ExtractedTemporalData[dataIndex].trends.GetRange(i, ExtractedTemporalData[dataIndex].trends.Count - i));
+                                            ExtractedTemporalData[dataIndex].trends.RemoveRange(i, ExtractedTemporalData[dataIndex].trends.Count - i);
+                                            ExtractedTemporalData.Add(newData);
                                             addToLastItem = true;
                                         }
                                     }
                                     else
-                                        this.ExtractedTemporalData[dataIndex].Trend += this.ExtractedTemporalData[dataIndex].trends[i].word + ' ';
+                                        ExtractedTemporalData[dataIndex].Trend += ExtractedTemporalData[dataIndex].trends[i].word + ' ';
                             }
-                            for (int i = 0; i < this.ExtractedTemporalData[dataIndex].extras.Count; ++i)
+                            for (int i = 0; i < ExtractedTemporalData[dataIndex].extras.Count; ++i)
                             {
-                                if (word == this.ExtractedTemporalData[dataIndex].extras[i].word)
-                                    if (this.ExtractedTemporalData[dataIndex].extras[i].Index > ccIndex)
+                                if (word == ExtractedTemporalData[dataIndex].extras[i].word)
+                                    if (ExtractedTemporalData[dataIndex].extras[i].Index > ccIndex)
                                     {
                                         if (addToLastItem)
                                         {
                                             if (!lastIndex)
                                             {
-                                                this.ExtractedTemporalData[dataIndex + 1].extras.AddRange(this.ExtractedTemporalData[dataIndex].extras.GetRange(i, this.ExtractedTemporalData[dataIndex].extras.Count - i));
-                                                this.ExtractedTemporalData[dataIndex].extras.RemoveRange(i, this.ExtractedTemporalData[dataIndex].extras.Count - i);
+                                                ExtractedTemporalData[dataIndex + 1].extras.AddRange(ExtractedTemporalData[dataIndex].extras.GetRange(i, ExtractedTemporalData[dataIndex].extras.Count - i));
+                                                ExtractedTemporalData[dataIndex].extras.RemoveRange(i, ExtractedTemporalData[dataIndex].extras.Count - i);
                                             }
                                             else
-                                                this.ExtractedTemporalData[dataIndex].Extra += this.ExtractedTemporalData[dataIndex].extras[i].word + ' ';
+                                                ExtractedTemporalData[dataIndex].Extra += ExtractedTemporalData[dataIndex].extras[i].word + ' ';
                                         }
                                         else
                                         {
                                             ExtractedData newData = new ExtractedData();
-                                            newData.extras.AddRange(this.ExtractedTemporalData[dataIndex].extras.GetRange(i, this.ExtractedTemporalData[dataIndex].extras.Count - i));
-                                            this.ExtractedTemporalData[dataIndex].extras.RemoveRange(i, this.ExtractedTemporalData[dataIndex].extras.Count - i);
-                                            this.ExtractedTemporalData.Add(newData);
+                                            newData.extras.AddRange(ExtractedTemporalData[dataIndex].extras.GetRange(i, ExtractedTemporalData[dataIndex].extras.Count - i));
+                                            ExtractedTemporalData[dataIndex].extras.RemoveRange(i, ExtractedTemporalData[dataIndex].extras.Count - i);
+                                            ExtractedTemporalData.Add(newData);
                                             addToLastItem = true;
                                         }
                                     }
                                     else
-                                        this.ExtractedTemporalData[dataIndex].Extra += this.ExtractedTemporalData[dataIndex].extras[i].word + ' ';
+                                        ExtractedTemporalData[dataIndex].Extra += ExtractedTemporalData[dataIndex].extras[i].word + ' ';
                             }
                         }
                         else
-                            if (this.ExtractedTemporalData[dataIndex].Date == "")
-                            this.ExtractedTemporalData[dataIndex].Date = currentPartOfDate.Type;
+                            if (ExtractedTemporalData[dataIndex].Date == "")
+                            ExtractedTemporalData[dataIndex].Date = currentPartOfDate.Type;
                     }
                 }
             }
@@ -255,26 +255,26 @@ namespace Temporal_data_mining_system
 
         private void FillTemporalData()
         {
-            if (this.ExtractedTemporalData.Count > 1)
+            if (ExtractedTemporalData.Count > 1)
             {
-                for (int i = 1; i < this.ExtractedTemporalData.Count; ++i)
+                for (int i = 1; i < ExtractedTemporalData.Count; ++i)
                 {
-                    if (this.ExtractedTemporalData[i].Object == string.Empty)
-                        this.ExtractedTemporalData[i].Object = this.ExtractedTemporalData[i - 1].Object;
-                    if (this.ExtractedTemporalData[i].Trend == string.Empty)
-                        this.ExtractedTemporalData[i].Trend = this.ExtractedTemporalData[i - 1].Trend;
-                    if (this.ExtractedTemporalData[i].Date == string.Empty)
-                        this.ExtractedTemporalData[i].Date = this.ExtractedTemporalData[i - 1].Date;
+                    if (ExtractedTemporalData[i].Object == string.Empty)
+                        ExtractedTemporalData[i].Object = ExtractedTemporalData[i - 1].Object;
+                    if (ExtractedTemporalData[i].Trend == string.Empty)
+                        ExtractedTemporalData[i].Trend = ExtractedTemporalData[i - 1].Trend;
+                    if (ExtractedTemporalData[i].Date == string.Empty)
+                        ExtractedTemporalData[i].Date = ExtractedTemporalData[i - 1].Date;
                 }
 
-                for (int i = this.ExtractedTemporalData.Count - 1; i >= 0; --i)
+                for (int i = ExtractedTemporalData.Count - 1; i >= 0; --i)
                 {
-                    if (this.ExtractedTemporalData[i].Object == string.Empty)
-                        this.ExtractedTemporalData[i].Object = this.ExtractedTemporalData[i + 1].Object;
-                    if (this.ExtractedTemporalData[i].Trend == string.Empty)
-                        this.ExtractedTemporalData[i].Trend = this.ExtractedTemporalData[i + 1].Trend;
-                    if (this.ExtractedTemporalData[i].Date == string.Empty)
-                        this.ExtractedTemporalData[i].Date = this.ExtractedTemporalData[i + 1].Date;
+                    if (ExtractedTemporalData[i].Object == string.Empty)
+                        ExtractedTemporalData[i].Object = ExtractedTemporalData[i + 1].Object;
+                    if (ExtractedTemporalData[i].Trend == string.Empty)
+                        ExtractedTemporalData[i].Trend = ExtractedTemporalData[i + 1].Trend;
+                    if (ExtractedTemporalData[i].Date == string.Empty)
+                        ExtractedTemporalData[i].Date = ExtractedTemporalData[i + 1].Date;
                 }
             }
         }

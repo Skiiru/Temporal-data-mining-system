@@ -6,6 +6,10 @@
         xmlns:local="clr-namespace:Temporal_data_mining_system"
         mc:Ignorable="d"
         xmlns:gif="http://wpfanimatedgif.codeplex.com"
+        xmlns:sparrow="http://sparrowtoolkit.codeplex.com/wpf"
+        xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
+        xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+        xmlns:dvc ="clr-namespace:System.Windows.Forms.DataVisualization.Charting;assembly=System.Windows.Forms.DataVisualization"
         Title="Temporal data mining system" Height="354.902" Width="711.275"
         Background="AliceBlue">
     <Grid>
@@ -100,7 +104,10 @@
                         <RowDefinition Height="40"></RowDefinition>
                     </Grid.RowDefinitions>
                     <GridSplitter Grid.Column="0" Grid.Row="0" VerticalAlignment="Stretch" Width="10" Opacity="0" Margin="0"/>
-                    <TextBox x:Name="tbURL" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,5,10,5" KeyUp="tbURL_KeyUp" ></TextBox>
+                    <DockPanel Grid.Column="0" Grid.ColumnSpan="2" Margin="10,5,10,5">
+                        <Label Margin="0,0,5,0" FontFamily="Segoe Print">URL</Label>
+                        <TextBox x:Name="tbURL" KeyUp="tbURL_KeyUp" ></TextBox>
+                    </DockPanel>
                     <WebBrowser x:Name="browser" Margin="10" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2"></WebBrowser>
                     <Button x:Name="bAnalyzePage" Grid.Row="2" Width="100" Height="30" Margin="0,5,0,5" Grid.ColumnSpan="2" Click="bAnalyzePage_Click">Analyze</Button>
                 </Grid>
@@ -109,6 +116,22 @@
                 <Grid>
                     <TreeView x:Name="treeView" Margin="10">
                     </TreeView>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="graphicTab" Header="Graphic" Visibility="Hidden">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40"></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <ComboBox x:Name="cbGraphicType" HorizontalAlignment="Left" SelectedIndex="0" Padding="5" Margin="5" SelectionChanged="cbGraphicType_SelectionChanged">
+                        <ComboBoxItem x:Name="cbiNone">None</ComboBoxItem>
+                        <ComboBoxItem x:Name="cbiObjects">Object items graphic</ComboBoxItem>
+                        <ComboBoxItem x:Name="cbiDates">Dates object graphic</ComboBoxItem>
+                    </ComboBox>
+                    <WindowsFormsHost Grid.Row="1">
+                        <dvc:Chart x:Name="chart" />
+                    </WindowsFormsHost>
                 </Grid>
             </TabItem>
         </TabControl>

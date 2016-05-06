@@ -13,12 +13,12 @@ namespace Temporal_data_mining_system
         {
             this.word = word;
             this.POS = POS;
-            this.EdgeRelation = relation;
+            EdgeRelation = relation;
         }
 
         public bool IsNeeded()
         {
-            switch (this.POS)
+            switch (POS)
             {
                 case "NNS":
                 case "NNP":
@@ -42,7 +42,7 @@ namespace Temporal_data_mining_system
         {
             foreach (TimeStamp date in sentence.Dates)
             {
-                if (date.OriginalText.IndexOf(this.word) != -1 && String.IsNullOrEmpty(data.Date))
+                if (date.OriginalText.IndexOf(word) != -1 && String.IsNullOrEmpty(data.Date))
                 {
                     data.Date = date.Type;
                 }
@@ -55,13 +55,13 @@ namespace Temporal_data_mining_system
 
         private bool SwitchWordRelations(ExtractedData data)
         {
-            switch (this.EdgeRelation)
+            switch (EdgeRelation)
             {
                 case "subj":
                 case "nsubj":
                 case "nsubjpass":
                 case "compound":
-                    if (this.POS != "DT")
+                    if (POS != "DT")
                     {
                         data.AddToObjects(this);
                         return true;
@@ -77,7 +77,7 @@ namespace Temporal_data_mining_system
                 case "advcl":
                 case "advmod":
                 case "conj":
-                    if (this.POS != "NNS" && this.POS != "NN" && this.POS != "NNP" && this.POS != "PRP")
+                    if (POS != "NNS" && POS != "NN" && POS != "NNP" && POS != "PRP")
                     {
                         data.AddToTrends(this);
                         return true;
@@ -93,14 +93,14 @@ namespace Temporal_data_mining_system
                 case "nummod":
                 case "nmod":
                 case "case":
-                    if (this.POS != "IN")
+                    if (POS != "IN")
                     {
                         data.AddToExtras(this);
                         return true;
                     }
                     else
                     {
-                        if (this.POS == "NNS" && this.POS == "NN" && this.POS == "NNP" && this.POS == "PRP")
+                        if (POS == "NNS" && POS == "NN" && POS == "NNP" && POS == "PRP")
                             data.AddToObjects(this);
                         return true;
                     }
@@ -110,7 +110,7 @@ namespace Temporal_data_mining_system
 
         public override bool Equals(object obj)
         {
-            return this.word == (obj as Word).word;
+            return word == (obj as Word).word;
         }
 
         public override int GetHashCode()
