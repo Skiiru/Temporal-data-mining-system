@@ -5,6 +5,10 @@ using System.Xml.Serialization;
 using MSWord = Microsoft.Office.Interop.Word;
 using CsvHelper;
 using System;
+using iTextSharp.text.pdf;
+using iTextSharp.text.pdf.parser;
+using System.Text;
+using iTextSharp.text;
 
 namespace Temporal_data_mining_system
 {
@@ -14,12 +18,14 @@ namespace Temporal_data_mining_system
         public static string ReadFile(string filePath)
         {
             var file = filePath.Split('.');
-            switch(file[file.Length - 1].ToLower())
+            switch (file[file.Length - 1].ToLower())
             {
                 case "txt":
                     return openTxtFile(filePath);
                 case "docx":
                     return openWordFile(filePath);
+                case "pdf":
+                    return openPDFFile(filePath);
                 default:
                     throw new IOException("Wrong file format.");
             }
@@ -46,35 +52,196 @@ namespace Temporal_data_mining_system
             csvWriter.WriteRecords(datalist);
         }
 
-        private static string openWordFile(string path)
+        public static void SaveReportPDF(List<ExtractedData> dataList, string path, MemoryStream objectChart = null, MemoryStream dateChart = null)
         {
-            try
-            {
-                //using interfaces
-                MSWord._Application application;
-                MSWord._Document document;
+            var doc = new Document();
+            PdfWriter.GetInstance(doc, new FileStream(path, FileMode.Create));
+            doc.Open();
 
-                application = new MSWord.Application();
-                Object file = @path;
-                document = application.Documents.Open(ref file);
-                MSWord.Range textRange = document.Content;
-                return textRange.Text;
-            }
-            catch
+            //Table
+            int columnCount = 4;
+            PdfPTable table = new PdfPTable(columnCount);
+
+            //Header
+            PdfPCell cell = new PdfPCell(new Phrase("Extracted data", new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
+            cell.BackgroundColor = BaseColor.WHITE;
+            cell.Padding = 5;
+            cell.Colspan = 3;
+            cell.HorizontalAlignment = Element.ALIGN_CENTER;
+            table.AddCell(cell);
+            table.AddCell("Date");
+            table.AddCell("Object");
+            table.AddCell("Trend");
+            table.AddCell("Additional inf");
+
+            //Body
+            foreach (ExtractedData data in dataList)
             {
-                return string.Empty;
+                //Date
+                cell = new PdfPCell(new Phrase(data.Date, new Font(Font.FontFamily.TIMES_ROMAN, 14, Font.NORMAL, BaseColor.BLACK)));
+                table.AddCell(cell);
+                //Object
+                cell.Phrase = new Phrase(data.Object, new Font(Font.FontFamily.TIMES_ROMAN, 14, Font.NORMAL, BaseColor.BLACK));
+                table.AddCell(cell);
+                //Trend
+                cell.Phrase = new Phrase(data.Trend, new Font(Font.FontFamily.TIMES_ROMAN, 14, Font.NORMAL, BaseColor.BLACK));
+                table.AddCell(cell);
+                //Addtitional information
+                cell.Phrase = new Phrase(data.Extra, new Font(Font.FontFamily.TIMES_ROMAN, 14, Font.NORMAL, BaseColor.BLACK));
+                table.AddCell(cell);
             }
+            doc.Add(table);
+
+            if (objectChart != null)
+            {
+                doc.Add(new Phrase("Objects chart", new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
+                Image img = Image.GetInstance(objectChart.GetBuffer());
+                img.ScalePercent(75f);
+                doc.Add(img);
+            }
+            if (dateChart != null)
+            {
+                doc.Add(new Phrase("Dates chart", new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
+                Image img = Image.GetInstance(dateChart.GetBuffer());
+                img.ScalePercent(75f);
+                doc.Add(img);
+            }
+            doc.Close();
         }
 
-        private static string openTxtFile(string path)
+        public static void SaveReportWord(List<ExtractedData> dataList, string path, MemoryStream objectChart = null, MemoryStream dateChart = null)
         {
-            string result = string.Empty;
             try
             {
-                result = File.ReadAllText(path);
+                object oMissing = System.Reflection.Missing.Value;
+                object oEndOfDoc = "\\endofdoc"; /* \endofdoc is a predefined bookmark */
+                int columnCount = 4;
+
+                //Start Word and create a new document.
+                MSWord._Application oWord;
+                MSWord._Document oDoc;
+                oWord = new MSWord.Application();
+                oWord.Visible = true;
+                oDoc = oWord.Documents.Add(ref oMissing, ref oMissing, ref oMissing, ref oMissing);
+
+                //Insert a title at the beginning of the document.
+                MSWord.Paragraph oParaTitle;
+                oParaTitle = oDoc.Content.Paragraphs.Add(ref oMissing);
+                oParaTitle.Range.Text = "Extracted data" + Environment.NewLine;
+                oParaTitle.Range.Font.Size = 16;
+                oParaTitle.Range.Font.Bold = 1;
+                oParaTitle.Format.SpaceAfter = 24;    //24 pt spacing after paragraph.
+                oParaTitle.Range.InsertParagraphAfter();
+
+                //Insert a 3 x 5 table, fill it with data, and make the first row
+                //bold and italic.
+                MSWord.Table oTable;
+                MSWord.Range wrdRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+                oTable = oDoc.Tables.Add(wrdRng, dataList.Count + 1, columnCount, ref oMissing, ref oMissing);
+                oTable.Range.ParagraphFormat.SpaceAfter = 6;
+
+                oTable.Cell(1, 1).Range.Text = "Date";
+                oTable.Cell(1, 2).Range.Text = "Object";
+                oTable.Cell(1, 3).Range.Text = "Trend";
+                oTable.Cell(1, 4).Range.Text = "Additional inf.";
+                for (int r = 2; r <= dataList.Count + 1; r++)
+                {
+                    oTable.Cell(r, 1).Range.Text = dataList[r - 1].Date;
+                    oTable.Cell(r, 2).Range.Text = dataList[r - 1].Object;
+                    oTable.Cell(r, 3).Range.Text = dataList[r - 1].Trend;
+                    oTable.Cell(r, 4).Range.Text = dataList[r - 1].Extra;
+                }
+                oTable.Rows[1].Range.Font.Bold = 1;
+
+                if(objectChart!=null)
+                {
+                    //Insert a title
+                    MSWord.Paragraph oParaTableObjectTitle;
+                    oParaTableObjectTitle = oDoc.Content.Paragraphs.Add(ref oMissing);
+                    oParaTableObjectTitle.Range.Text = "Objects chart" + Environment.NewLine;
+                    oParaTableObjectTitle.Range.Font.Size = 16;
+                    oParaTableObjectTitle.Range.Font.Bold = 1;
+                    oParaTableObjectTitle.Format.SpaceAfter = 24;    //24 pt spacing after paragraph.
+                    oParaTableObjectTitle.Range.InsertParagraphAfter();
+
+                    System.Drawing.Image img = System.Drawing.Image.FromStream(objectChart);
+                    System.Windows.Clipboard.SetDataObject(img);
+                    MSWord.Paragraph oParaObjectPict = oDoc.Content.Paragraphs.Add(oMissing);
+                    oParaObjectPict.Range.Paste();
+                }
+
+                if (dateChart != null)
+                {
+                    //Insert a title
+                    MSWord.Paragraph oParaTableObjectTitle;
+                    oParaTableObjectTitle = oDoc.Content.Paragraphs.Add(ref oMissing);
+                    oParaTableObjectTitle.Range.Text = "Dates chart" + Environment.NewLine;
+                    oParaTableObjectTitle.Range.Font.Size = 16;
+                    oParaTableObjectTitle.Range.Font.Bold = 1;
+                    oParaTableObjectTitle.Format.SpaceAfter = 24;    //24 pt spacing after paragraph.
+                    oParaTableObjectTitle.Range.InsertParagraphAfter();
+
+                    System.Drawing.Image img = System.Drawing.Image.FromStream(dateChart);
+                    System.Windows.Clipboard.SetDataObject(img);
+                    MSWord.Paragraph oParaObjectPict = oDoc.Content.Paragraphs.Add(oMissing);
+                    oParaObjectPict.Range.Paste();
+                }
+                oDoc.SaveAs2(path);
+                oWord.Quit();
             }
             catch { }
-            return result;
+        }
+
+    private static string openWordFile(string path)
+    {
+        try
+        {
+            //using interfaces
+            MSWord._Application application;
+            MSWord._Document document;
+
+            application = new MSWord.Application();
+            Object file = @path;
+            document = application.Documents.Open(ref file);
+            MSWord.Range textRange = document.Content;
+            return textRange.Text;
+        }
+        catch
+        {
+            return string.Empty;
         }
     }
+
+    private static string openTxtFile(string path)
+    {
+        string result = string.Empty;
+        try
+        {
+            result = File.ReadAllText(path);
+        }
+        catch { }
+        return result;
+    }
+
+    private static string openPDFFile(string path)
+    {
+        StringBuilder text = new StringBuilder();
+
+        if (File.Exists(path))
+        {
+            PdfReader pdfReader = new PdfReader(path);
+
+            for (int page = 1; page <= pdfReader.NumberOfPages; page++)
+            {
+                ITextExtractionStrategy strategy = new SimpleTextExtractionStrategy();
+                string currentText = PdfTextExtractor.GetTextFromPage(pdfReader, page, strategy);
+
+                currentText = Encoding.UTF8.GetString(ASCIIEncoding.Convert(Encoding.Default, Encoding.UTF8, Encoding.Default.GetBytes(currentText)));
+                text.Append(currentText);
+            }
+            pdfReader.Close();
+        }
+        return text.ToString();
+    }
+}
 }

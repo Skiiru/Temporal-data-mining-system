@@ -7,6 +7,8 @@ using Microsoft.Win32;
 using System.Windows.Controls;
 using mshtml;
 using System.Windows.Forms.DataVisualization.Charting;
+using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Temporal_data_mining_system
 {
@@ -35,6 +37,7 @@ namespace Temporal_data_mining_system
             extractedDataByObject = new Dictionary<string, List<ExtractedData>>();
             filtredData = new List<ExtractedData>();
             extractedDataByDate = new Dictionary<string, List<ExtractedData>>();
+            chart.ChartAreas.Add(new ChartArea("Default"));
         }
 
         #region Custom functions
@@ -53,6 +56,7 @@ namespace Temporal_data_mining_system
         {
             treeView.Items.Clear();
             extractedDataByObject.Clear();
+            extractedDataByDate.Clear();
             if (extractedData != null && extractedData.Count > 0)
             {
                 foreach (ExtractedData data in extractedData)
@@ -124,7 +128,7 @@ namespace Temporal_data_mining_system
                 {
                     try
                     {
-                        sutimePipeline = Sentence.GetTemporalPipeline();
+                        sutimePipeline = TemporalDataExtractor.GetTemporalPipeline();
                         pipeline = TemporalDataExtractor.GetPipeline();
                         return true;
                     }
@@ -138,8 +142,15 @@ namespace Temporal_data_mining_system
                     if (flag.Result)
                     {
                         TemporalDataExtractor temporalExtractor = new TemporalDataExtractor();
-                        extractedData = temporalExtractor.parse(text, pipeline, sutimePipeline);
-                        dgExtractedData.ItemsSource = extractedData;
+                        try
+                        {
+                            extractedData = temporalExtractor.parse(text, pipeline, sutimePipeline);
+                            dgExtractedData.ItemsSource = extractedData;
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message, "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                     }
                     else
                         MessageBox.Show("Error in loading language models or creating pipelines.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -173,6 +184,94 @@ namespace Temporal_data_mining_system
                 }
             }
 
+        }
+
+        private void DrawObjectsChart()
+        {
+            if (extractedDataByObject != null && extractedDataByObject.Count > 0)
+            {
+
+                // Добавим линию, и назначим ее в ранее созданную область "Default"
+                Series series = new Series("Count");
+                series.ChartArea = "Default";
+                series.ChartType = SeriesChartType.Column;
+
+                // добавим данные линии
+                List<String> axisXData = new List<String>();
+                List<double> axisYData = new List<double>();
+                series.Points.DataBindXY(axisXData, axisYData);
+
+                foreach (KeyValuePair<string, List<ExtractedData>> kvp in extractedDataByObject)
+                {
+                    axisXData.Add(kvp.Key);
+                    axisYData.Add(kvp.Value.Count);
+
+                }
+                series.Points.DataBindXY(axisXData, axisYData);
+                chart.Series.Add(series);
+            }
+        }
+
+        private void DrawDatesChart()
+        {
+            if (extractedDataByDate != null && extractedDataByDate.Count > 0)
+            {
+
+                // Добавим линию, и назначим ее в ранее созданную область "Default"
+                Series series = new Series("Count");
+                series.ChartArea = "Default";
+                series.ChartType = SeriesChartType.Column;
+
+                // добавим данные линии
+                List<String> axisXData = new List<String>();
+                List<double> axisYData = new List<double>();
+                series.Points.DataBindXY(axisXData, axisYData);
+
+                foreach (KeyValuePair<string, List<ExtractedData>> kvp in extractedDataByDate)
+                {
+                    axisXData.Add(kvp.Key);
+                    axisYData.Add(kvp.Value.Count);
+
+                }
+                series.Points.DataBindXY(axisXData, axisYData);
+                chart.Series.Add(series);
+            }
+        }
+
+        private MemoryStream GetObjectsChart()
+        {
+            if (extractedDataByObject != null && extractedDataByObject.Count > 0)
+            {
+                MemoryStream memoryStream = new MemoryStream();
+                chart.Series.Clear();
+                DrawObjectsChart();
+                chart.SaveImage(memoryStream, ChartImageFormat.Png);
+                cbGraphicType.SelectedIndex = 0;
+                return memoryStream;
+            }
+            else
+            {
+                cbGraphicType.SelectedIndex = 0;
+                return null;
+            }
+        }
+
+        private MemoryStream GetDatesChart()
+        {
+            if (extractedDataByDate != null && extractedDataByDate.Count > 0)
+            {
+                MemoryStream memoryStream = new MemoryStream();
+                chart.Series.Clear();
+                DrawDatesChart();
+                chart.SaveImage(memoryStream, ChartImageFormat.Png);
+                cbGraphicType.SelectedIndex = 0;
+                return memoryStream;
+            }
+            else
+            {
+                cbGraphicType.SelectedIndex = 0;
+                return null;
+            }
         }
         #endregion
 
@@ -259,7 +358,10 @@ namespace Temporal_data_mining_system
         {
             if (e.Key == System.Windows.Input.Key.Enter)
             {
-                browser.Source = new Uri(tbURL.Text);
+                if (Regex.IsMatch(tbURL.Text, @"^http(s)?://([\w-]+.)+[\w-]+(/[\w- ./?%&=])?$"))
+                    browser.Source = new Uri(tbURL.Text);
+                else
+                    browser.Source = new Uri(@"https://www.google.ru/webhp#newwindow=0&q=" + tbURL.Text);
             }
         }
 
@@ -277,7 +379,11 @@ namespace Temporal_data_mining_system
                         var selectionRange = currentSelection.createRange();
                         if (selectionRange != null)
                         {
-                            text = selectionRange.Text;
+                            if (selectionRange.Text != null)
+                                text = selectionRange.Text;
+                            else
+                                text = doc.body.innerText;
+                            text = text.Replace(System.Environment.NewLine, string.Empty);
                             tbInputText.Text = text;
                         }
                     }
@@ -305,57 +411,12 @@ namespace Temporal_data_mining_system
                 else if (selected == cbiObjects)
                 {
                     chart.Series.Clear();
-                    if (extractedDataByObject != null && extractedDataByObject.Count > 0)
-                    {
-                        chart.ChartAreas.Add(new ChartArea("Default"));
-
-                        // Добавим линию, и назначим ее в ранее созданную область "Default"
-                        Series series = new Series("Count");
-                        series.ChartArea = "Default";
-                        series.ChartType = SeriesChartType.Column;
-
-                        // добавим данные линии
-                        List<String> axisXData = new List<String>();
-                        List<double> axisYData = new List<double>();
-                        series.Points.DataBindXY(axisXData, axisYData);
-
-                        foreach (KeyValuePair<string, List<ExtractedData>> kvp in extractedDataByObject)
-                        {
-                            axisXData.Add(kvp.Key);
-                            axisYData.Add(kvp.Value.Count);
-  
-                        }
-                        series.Points.DataBindXY(axisXData, axisYData);
-                        chart.Series.Add(series);
-                    }
+                    DrawObjectsChart();
                 }
                 else if (selected == cbiDates)
                 {
                     chart.Series.Clear();
-                    if (extractedDataByDate != null && extractedDataByDate.Count > 0)
-                    {
-                        chart.ChartAreas.Add(new ChartArea("Default"));
-
-                        // Добавим линию, и назначим ее в ранее созданную область "Default"
-                        Series series = new Series("Count");
-                        series.ChartArea = "Default";
-                        series.ChartType = SeriesChartType.Column;
-
-                        // добавим данные линии
-                        List<String> axisXData = new List<String>();
-                        List<double> axisYData = new List<double>();
-                        series.Points.DataBindXY(axisXData, axisYData);
-
-                        foreach (KeyValuePair<string, List<ExtractedData>> kvp in extractedDataByDate)
-                        {
-                            axisXData.Add(kvp.Key);
-                            axisYData.Add(kvp.Value.Count);
-
-                        }
-                        series.Points.DataBindXY(axisXData, axisYData);
-                        chart.Series.Add(series);
-                    }
-
+                    DrawDatesChart();
                 }
             }
         }

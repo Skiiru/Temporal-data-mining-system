@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using java.util;
-using java.io;
 using edu.stanford.nlp.pipeline;
 using edu.stanford.nlp.ling;
 using edu.stanford.nlp.time;
 using edu.stanford.nlp.trees;
 using edu.stanford.nlp.semgraph;
-using System.Text.RegularExpressions;
-using edu.stanford.nlp.dcoref;
+using edu.stanford.nlp.tagger.maxent;
 using System.IO;
 
 namespace Temporal_data_mining_system
@@ -121,6 +118,40 @@ namespace Temporal_data_mining_system
             }
         }
 
+        /// <summary>
+        /// Создает источник информации для нахождения темпоральных данных
+        /// </summary>
+        /// <returns>Источник информации</returns>
+        public static AnnotationPipeline GetTemporalPipeline()
+        {
+            // Path to the folder with models extracted from `stanford-corenlp-3.5.2-models.jar`
+            var jarRoot = Environment.CurrentDirectory + @"\models";
+            var modelsDirectory = jarRoot + @"\edu\stanford\nlp\models";
+
+            // Annotation pipeline configuration
+            var pipeline = new AnnotationPipeline();
+            pipeline.addAnnotator(new TokenizerAnnotator(false));
+            pipeline.addAnnotator(new WordsToSentencesAnnotator(false));
+
+
+            // Loading POS Tagger and including them into pipeline
+            var tagger = new MaxentTagger(modelsDirectory +
+                         @"\pos-tagger\english-bidirectional\english-bidirectional-distsim.tagger");
+            pipeline.addAnnotator(new POSTaggerAnnotator(tagger));
+
+            // SUTime configuration
+            var sutimeRules = modelsDirectory + @"\sutime\defs.sutime.txt,"
+                              + modelsDirectory + @"\sutime\english.holidays.sutime.txt,"
+                              + modelsDirectory + @"\sutime\english.sutime.txt";
+            var props = new java.util.Properties();
+            props.setProperty("sutime.rules", sutimeRules);
+            props.setProperty("sutime.binders", "0");
+            props.setProperty("sutime.markTimeRanges", "true");
+            props.setProperty("sutime.includeRange", "true");
+            pipeline.addAnnotator(new TimeAnnotator("sutime", props));
+
+            return pipeline;
+        }
 
         /// <summary>
         /// Анализирует предложение и выделяет в нем темпоральные данные
