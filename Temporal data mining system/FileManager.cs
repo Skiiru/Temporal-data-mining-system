@@ -52,12 +52,13 @@ namespace Temporal_data_mining_system
             csvWriter.WriteRecords(datalist);
         }
 
-        public static void SaveReportPDF(List<ExtractedData> dataList, string path, MemoryStream objectChart = null, MemoryStream dateChart = null)
+        public static void SaveReportPDF(string text, List<ExtractedData> dataList, string path, MemoryStream objectChart = null, MemoryStream dateChart = null, List<String> statistics = null)
         {
             var doc = new Document();
             PdfWriter.GetInstance(doc, new FileStream(path, FileMode.Create));
             doc.Open();
 
+            
             //Table
             int columnCount = 4;
             PdfPTable table = new PdfPTable(columnCount);
@@ -109,7 +110,7 @@ namespace Temporal_data_mining_system
             doc.Close();
         }
 
-        public static void SaveReportWord(List<ExtractedData> dataList, string path, MemoryStream objectChart = null, MemoryStream dateChart = null)
+        public static void SaveReportWord(string text, List<ExtractedData> dataList, string path, MemoryStream objectChart = null, MemoryStream dateChart = null, List<String> statistics = null)
         {
             try
             {

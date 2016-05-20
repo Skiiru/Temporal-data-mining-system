@@ -26,6 +26,10 @@ namespace Temporal_data_mining_system
         SaveFileDialog sfdResult;
         Dictionary<string, List<ExtractedData>> extractedDataByObject;
         Dictionary<string, List<ExtractedData>> extractedDataByDate;
+        double extractingTime;
+        int corruptedElements;
+        int notExracted;
+        double accuracy;
 
         public MainWindow()
         {
@@ -38,6 +42,8 @@ namespace Temporal_data_mining_system
             filtredData = new List<ExtractedData>();
             extractedDataByDate = new Dictionary<string, List<ExtractedData>>();
             chart.ChartAreas.Add(new ChartArea("Default"));
+            extractingTime = corruptedElements = notExracted = 0;
+            accuracy = 100;
         }
 
         #region Custom functions
@@ -49,7 +55,7 @@ namespace Temporal_data_mining_system
         private void DeactivateItems()
         {
             treeViewTab.Visibility = Visibility.Hidden;
-            graphicTab.Visibility = Visibility.Hidden;
+            chartTab.Visibility = Visibility.Hidden;
         }
 
         private void FillDictionaris()
@@ -121,6 +127,7 @@ namespace Temporal_data_mining_system
 
         private void loadPipelines()
         {
+            extractingTime = corruptedElements = notExracted = 0;
             imageLoading.Visibility = Visibility.Visible;
             Dispatcher.BeginInvoke((Action)(() => tabControl.SelectedIndex = 0));
             if (pipeline == null || sutimePipeline == null)
@@ -141,11 +148,13 @@ namespace Temporal_data_mining_system
                 {
                     if (flag.Result)
                     {
+                        DateTime now = DateTime.UtcNow;
                         TemporalDataExtractor temporalExtractor = new TemporalDataExtractor();
                         try
                         {
                             extractedData = temporalExtractor.parse(text, pipeline, sutimePipeline);
                             dgExtractedData.ItemsSource = extractedData;
+                            extractingTime = (DateTime.UtcNow - now).TotalSeconds;
                         }
                         catch (Exception ex)
                         {
@@ -156,8 +165,14 @@ namespace Temporal_data_mining_system
                         MessageBox.Show("Error in loading language models or creating pipelines.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
                     if (extractedData != null && extractedData.Count > 0)
                     {
+                        foreach (ExtractedData data in extractedData)
+                            if (string.IsNullOrEmpty(data.Object) || string.IsNullOrEmpty(data.Trend) || string.IsNullOrEmpty(data.Date))
+                                corruptedElements++;
+                        lbExtractedElements.Content = extractedData.Count;
+                        lbExtractingTime.Content = extractingTime;
+                        lbCorruptedElements.Content = corruptedElements;
                         treeViewTab.Visibility = Visibility.Visible;
-                        graphicTab.Visibility = Visibility.Visible;
+                        chartTab.Visibility = Visibility.Visible;
                         FillDictionaris();
                     }
                     imageLoading.Visibility = Visibility.Hidden;
@@ -166,13 +181,22 @@ namespace Temporal_data_mining_system
             {
                 try
                 {
+                    extractingTime = corruptedElements = notExracted = 0;
                     TemporalDataExtractor temporalExtractor = new TemporalDataExtractor();
+                    DateTime now = DateTime.UtcNow;
                     extractedData = temporalExtractor.parse(text, pipeline, sutimePipeline);
+                    extractingTime = (DateTime.UtcNow - now).TotalSeconds;
                     dgExtractedData.ItemsSource = extractedData;
                     if (extractedData != null && extractedData.Count > 0)
                     {
+                        foreach (ExtractedData data in extractedData)
+                            if (string.IsNullOrEmpty(data.Object) || string.IsNullOrEmpty(data.Trend) || string.IsNullOrEmpty(data.Date))
+                                corruptedElements++;
+                        lbExtractedElements.Content = extractedData.Count;
+                        lbExtractingTime.Content = extractingTime;
+                        lbCorruptedElements.Content = corruptedElements;
                         treeViewTab.Visibility = Visibility.Visible;
-                        graphicTab.Visibility = Visibility.Visible;
+                        chartTab.Visibility = Visibility.Visible;
                         FillDictionaris();
                     }
                     imageLoading.Visibility = Visibility.Hidden;
@@ -419,6 +443,64 @@ namespace Temporal_data_mining_system
                     DrawDatesChart();
                 }
             }
+        }
+
+        private void tbNotExtracted_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!(string.IsNullOrEmpty(tbNotExtracted.Text) && string.IsNullOrWhiteSpace(tbNotExtracted.Text)))
+            {
+                try
+                {
+                    accuracy = (extractedData.Count - corruptedElements) / (Convert.ToInt32(tbNotExtracted.Text) + extractedData.Count);
+                    lbAccuracy.Content = "Total: " + accuracy + "%";
+                    notExracted = Convert.ToInt32(tbNotExtracted.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            else
+            {
+                accuracy = (extractedData.Count - corruptedElements) / extractedData.Count;
+                lbAccuracy.Content = "Total: " + accuracy + "%";
+            }
+        }
+
+        private void bSaverReport_Click(object sender, RoutedEventArgs e)
+        {
+            MemoryStream objectChart = null;
+            if ((bool)cbObjectChart.IsChecked)
+                objectChart = GetObjectsChart();
+            MemoryStream dateChart = null;
+            if ((bool)cbDateChart.IsChecked)
+                dateChart = GetDatesChart();
+            List<String> statistics = null;
+            if ((bool)cbStatistick.IsChecked)
+            {
+                statistics = new List<string>();
+                statistics.Add("Extracting time: " + extractingTime);
+                statistics.Add("Extracted elements: " + extractedData.Count);
+                statistics.Add("Corruptet elements: " + corruptedElements);
+                statistics.Add("NotExtracted: " + notExracted);
+                statistics.Add("Accuracy: " + accuracy);
+            }
+            if (cbReportFormat.SelectedItem == cbiReportDOCX)
+            {
+                sfdResult.Filter = "MS Word|*.docx";
+                sfdResult.ShowDialog();
+                string path = sfdResult.FileName;
+                FileManager.SaveReportWord(text, extractedData, path, objectChart, dateChart, statistics);
+            }
+            else if (cbReportFormat.SelectedItem == cbiReportPDF)
+            {
+                sfdResult.Filter = "PDF|*.pdf";
+                sfdResult.ShowDialog();
+                string path = sfdResult.FileName;
+                FileManager.SaveReportPDF(text, extractedData, path, objectChart, dateChart, statistics);
+            }
+            else
+                MessageBox.Show("Plese select extension!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         #endregion
     }
