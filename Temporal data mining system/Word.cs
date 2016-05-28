@@ -2,7 +2,7 @@
 
 namespace Temporal_data_mining_system
 {
-    class Word
+    public class Word
     {
         public string word { get; set; }
         public string POS { get; set; }

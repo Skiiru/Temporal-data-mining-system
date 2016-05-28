@@ -8,7 +8,7 @@ using edu.stanford.nlp.ling;
 
 namespace Temporal_data_mining_system
 {
-    class Sentence
+    public class Sentence
     {
         public string SentenceText;
         public string SentenceWithPOS;

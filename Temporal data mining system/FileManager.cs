@@ -35,8 +35,9 @@ namespace Temporal_data_mining_system
         {
             using (StreamWriter stream = new StreamWriter(path))
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(List<ExtractedData>));
-                serializer.Serialize(stream, dataList);
+                ExtractedDataList list = new ExtractedDataList(dataList);
+                XmlSerializer serializer = new XmlSerializer(typeof(ExtractedDataList));
+                serializer.Serialize(stream, list);
             }
         }
 
@@ -58,7 +59,8 @@ namespace Temporal_data_mining_system
             PdfWriter.GetInstance(doc, new FileStream(path, FileMode.Create));
             doc.Open();
 
-            
+            doc.Add(new Phrase("Text: " + Environment.NewLine + text, new Font(Font.FontFamily.TIMES_ROMAN, 14, Font.NORMAL, BaseColor.BLACK)));
+
             //Table
             int columnCount = 4;
             PdfPTable table = new PdfPTable(columnCount);
@@ -67,7 +69,7 @@ namespace Temporal_data_mining_system
             PdfPCell cell = new PdfPCell(new Phrase("Extracted data", new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
             cell.BackgroundColor = BaseColor.WHITE;
             cell.Padding = 5;
-            cell.Colspan = 3;
+            cell.Colspan = 4;
             cell.HorizontalAlignment = Element.ALIGN_CENTER;
             table.AddCell(cell);
             table.AddCell("Date");
@@ -92,21 +94,33 @@ namespace Temporal_data_mining_system
                 table.AddCell(cell);
             }
             doc.Add(table);
+            doc.Add(new Phrase(Environment.NewLine));
 
+            //Charts
             if (objectChart != null)
             {
-                doc.Add(new Phrase("Objects chart", new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
+                doc.Add(new Phrase("Objects chart" + Environment.NewLine, new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
                 Image img = Image.GetInstance(objectChart.GetBuffer());
                 img.ScalePercent(75f);
                 doc.Add(img);
+                doc.Add(new Phrase(Environment.NewLine));
             }
             if (dateChart != null)
             {
-                doc.Add(new Phrase("Dates chart", new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
+                doc.Add(new Phrase("Dates chart" + Environment.NewLine, new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
                 Image img = Image.GetInstance(dateChart.GetBuffer());
                 img.ScalePercent(75f);
                 doc.Add(img);
+                doc.Add(new Phrase(Environment.NewLine));
             }
+
+            if(statistics!=null)
+            {
+                string statText = "Statistics: " + Environment.NewLine;
+                statistics.ForEach(str => statText += str + Environment.NewLine);
+                doc.Add(new Phrase(statText, new Font(Font.FontFamily.TIMES_ROMAN, 14, Font.NORMAL, BaseColor.BLACK)));
+            }
+
             doc.Close();
         }
 
@@ -122,13 +136,20 @@ namespace Temporal_data_mining_system
                 MSWord._Application oWord;
                 MSWord._Document oDoc;
                 oWord = new MSWord.Application();
-                oWord.Visible = true;
                 oDoc = oWord.Documents.Add(ref oMissing, ref oMissing, ref oMissing, ref oMissing);
+
+                //Text
+                MSWord.Paragraph oParaText;
+                oParaText = oDoc.Content.Paragraphs.Add(ref oMissing);
+                oParaText.Range.Text = "Text: " + Environment.NewLine + text;
+                oParaText.Range.Font.Size = 14;
+                oParaText.Format.SpaceAfter = 24;    //24 pt spacing after paragraph.
+                oParaText.Range.InsertParagraphAfter();
 
                 //Insert a title at the beginning of the document.
                 MSWord.Paragraph oParaTitle;
                 oParaTitle = oDoc.Content.Paragraphs.Add(ref oMissing);
-                oParaTitle.Range.Text = "Extracted data" + Environment.NewLine;
+                oParaTitle.Range.Text = "Extracted data";
                 oParaTitle.Range.Font.Size = 16;
                 oParaTitle.Range.Font.Bold = 1;
                 oParaTitle.Format.SpaceAfter = 24;    //24 pt spacing after paragraph.
@@ -152,9 +173,8 @@ namespace Temporal_data_mining_system
                     oTable.Cell(r, 3).Range.Text = dataList[r - 1].Trend;
                     oTable.Cell(r, 4).Range.Text = dataList[r - 1].Extra;
                 }
-                oTable.Rows[1].Range.Font.Bold = 1;
 
-                if(objectChart!=null)
+                if (objectChart != null)
                 {
                     //Insert a title
                     MSWord.Paragraph oParaTableObjectTitle;
@@ -187,62 +207,75 @@ namespace Temporal_data_mining_system
                     MSWord.Paragraph oParaObjectPict = oDoc.Content.Paragraphs.Add(oMissing);
                     oParaObjectPict.Range.Paste();
                 }
+
+
+                if (statistics != null)
+                {
+                    MSWord.Paragraph oParaStat;
+                    oParaStat = oDoc.Content.Paragraphs.Add(ref oMissing);
+                    string statText = "Statistics: " + Environment.NewLine;
+                    statistics.ForEach(str => statText += str + Environment.NewLine);
+                    oParaStat.Range.Text = statText;
+                    oParaStat.Range.Font.Size = 14;
+                    oParaStat.Format.SpaceAfter = 24;    //24 pt spacing after paragraph.
+                    oParaStat.Range.InsertParagraphAfter();
+                }
                 oDoc.SaveAs2(path);
                 oWord.Quit();
             }
             catch { }
         }
 
-    private static string openWordFile(string path)
-    {
-        try
+        private static string openWordFile(string path)
         {
-            //using interfaces
-            MSWord._Application application;
-            MSWord._Document document;
-
-            application = new MSWord.Application();
-            Object file = @path;
-            document = application.Documents.Open(ref file);
-            MSWord.Range textRange = document.Content;
-            return textRange.Text;
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
-
-    private static string openTxtFile(string path)
-    {
-        string result = string.Empty;
-        try
-        {
-            result = File.ReadAllText(path);
-        }
-        catch { }
-        return result;
-    }
-
-    private static string openPDFFile(string path)
-    {
-        StringBuilder text = new StringBuilder();
-
-        if (File.Exists(path))
-        {
-            PdfReader pdfReader = new PdfReader(path);
-
-            for (int page = 1; page <= pdfReader.NumberOfPages; page++)
+            try
             {
-                ITextExtractionStrategy strategy = new SimpleTextExtractionStrategy();
-                string currentText = PdfTextExtractor.GetTextFromPage(pdfReader, page, strategy);
+                //using interfaces
+                MSWord._Application application;
+                MSWord._Document document;
 
-                currentText = Encoding.UTF8.GetString(ASCIIEncoding.Convert(Encoding.Default, Encoding.UTF8, Encoding.Default.GetBytes(currentText)));
-                text.Append(currentText);
+                application = new MSWord.Application();
+                Object file = @path;
+                document = application.Documents.Open(ref file);
+                MSWord.Range textRange = document.Content;
+                return textRange.Text;
             }
-            pdfReader.Close();
+            catch
+            {
+                return string.Empty;
+            }
         }
-        return text.ToString();
+
+        private static string openTxtFile(string path)
+        {
+            string result = string.Empty;
+            try
+            {
+                result = File.ReadAllText(path);
+            }
+            catch { }
+            return result;
+        }
+
+        private static string openPDFFile(string path)
+        {
+            StringBuilder text = new StringBuilder();
+
+            if (File.Exists(path))
+            {
+                PdfReader pdfReader = new PdfReader(path);
+
+                for (int page = 1; page <= pdfReader.NumberOfPages; page++)
+                {
+                    ITextExtractionStrategy strategy = new SimpleTextExtractionStrategy();
+                    string currentText = PdfTextExtractor.GetTextFromPage(pdfReader, page, strategy);
+
+                    currentText = Encoding.UTF8.GetString(ASCIIEncoding.Convert(Encoding.Default, Encoding.UTF8, Encoding.Default.GetBytes(currentText)));
+                    text.Append(currentText);
+                }
+                pdfReader.Close();
+            }
+            return text.ToString();
+        }
     }
-}
 }

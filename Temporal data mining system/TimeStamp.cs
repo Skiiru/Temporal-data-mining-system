@@ -1,6 +1,6 @@
 ﻿namespace Temporal_data_mining_system
 {
-    class TimeStamp
+    public class TimeStamp
     {
         public string Type { get; set; }
         public string OriginalText { get; set; }

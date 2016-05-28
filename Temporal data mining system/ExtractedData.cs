@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Temporal_data_mining_system
 {
-    class ExtractedData
+    public class ExtractedData
     {
         [System.ComponentModel.DisplayName("Дата")]
         public string Date { get; set; }

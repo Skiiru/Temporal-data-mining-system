@@ -244,3 +244,7 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 /Temporal data mining system/models
+/Temporal data mining system/1.csv
+/Temporal data mining system/1.json
+/Temporal data mining system/1.pdf
+/Temporal data mining system/1.xml

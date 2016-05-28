@@ -225,6 +225,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ExtractedDataList.cs" />
     <Compile Include="FileManager.cs" />
     <Compile Include="Sentence.cs" />
     <Compile Include="TemporalDataExtractor.cs" />
@@ -443,6 +444,11 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="img\loading.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="img\icon.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>

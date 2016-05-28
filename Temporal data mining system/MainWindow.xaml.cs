@@ -56,9 +56,10 @@ namespace Temporal_data_mining_system
         {
             treeViewTab.Visibility = Visibility.Hidden;
             chartTab.Visibility = Visibility.Hidden;
+            reportAndStatisticsTab.Visibility = Visibility.Hidden;
         }
 
-        private void FillDictionaris()
+        private void FillDictionaries()
         {
             treeView.Items.Clear();
             extractedDataByObject.Clear();
@@ -106,13 +107,14 @@ namespace Temporal_data_mining_system
             if (filter != string.Empty)
             {
                 filtredData = ExtractedData.Filter(extractedData, filter);
-                if (filtredData != null)
+                if (filtredData == null)
                 {
-                    dgExtractedData.Items.Clear();
-                    foreach (ExtractedData data in filtredData)
-                    {
-                        dgExtractedData.Items.Add(data);
-                    }
+                    filtredData = extractedData;
+                }
+                dgExtractedData.Items.Clear();
+                foreach (ExtractedData data in filtredData)
+                {
+                    dgExtractedData.Items.Add(data);
                 }
             }
             else
@@ -173,7 +175,8 @@ namespace Temporal_data_mining_system
                         lbCorruptedElements.Content = corruptedElements;
                         treeViewTab.Visibility = Visibility.Visible;
                         chartTab.Visibility = Visibility.Visible;
-                        FillDictionaris();
+                        reportAndStatisticsTab.Visibility = Visibility.Visible;
+                        FillDictionaries();
                     }
                     imageLoading.Visibility = Visibility.Hidden;
                 }, TaskScheduler.FromCurrentSynchronizationContext());
@@ -197,7 +200,7 @@ namespace Temporal_data_mining_system
                         lbCorruptedElements.Content = corruptedElements;
                         treeViewTab.Visibility = Visibility.Visible;
                         chartTab.Visibility = Visibility.Visible;
-                        FillDictionaris();
+                        FillDictionaries();
                     }
                     imageLoading.Visibility = Visibility.Hidden;
                 }
@@ -329,14 +332,9 @@ namespace Temporal_data_mining_system
         {
             sfdResult.Filter = "JSON|*.json";
             sfdResult.ShowDialog();
-            List<ExtractedData> dataForSave = new List<ExtractedData>();
-            foreach (ExtractedData data in dgExtractedData.Items)
+            if (filtredData != null && filtredData.Count > 0 && sfdResult.FileName != string.Empty)
             {
-                dataForSave.Add(data);
-            }
-            if (dataForSave != null && dataForSave.Count > 0 && sfdResult.FileName != string.Empty)
-            {
-                FileManager.saveToJSON(sfdResult.FileName, dataForSave);
+                FileManager.saveToJSON(sfdResult.FileName, filtredData);
             }
         }
 
@@ -344,14 +342,9 @@ namespace Temporal_data_mining_system
         {
             sfdResult.Filter = "XML|*.xml";
             sfdResult.ShowDialog();
-            List<ExtractedData> dataForSave = new List<ExtractedData>();
-            foreach (ExtractedData data in dgExtractedData.Items)
+            if (filtredData != null && filtredData.Count > 0 && sfdResult.FileName != string.Empty)
             {
-                dataForSave.Add(data);
-            }
-            if (dataForSave != null && dataForSave.Count > 0 && sfdResult.FileName != string.Empty)
-            {
-                FileManager.saveToXML(sfdResult.FileName, dataForSave);
+                FileManager.saveToXML(sfdResult.FileName, filtredData);
             }
         }
 
@@ -367,14 +360,9 @@ namespace Temporal_data_mining_system
         {
             sfdResult.Filter = "CSV|*.csv";
             sfdResult.ShowDialog();
-            List<ExtractedData> dataForSave = new List<ExtractedData>();
-            foreach (ExtractedData data in dgExtractedData.Items)
+            if (filtredData != null && filtredData.Count > 0 && sfdResult.FileName != string.Empty)
             {
-                dataForSave.Add(data);
-            }
-            if (dataForSave != null && dataForSave.Count > 0 && sfdResult.FileName != string.Empty)
-            {
-                FileManager.saveToXML(sfdResult.FileName, dataForSave);
+                FileManager.saveToCSV(sfdResult.FileName, filtredData);
             }
         }
 
@@ -503,5 +491,15 @@ namespace Temporal_data_mining_system
                 MessageBox.Show("Plese select extension!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         #endregion
+
+        private void menuSaveToPDF_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void menuSaveToWord_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
