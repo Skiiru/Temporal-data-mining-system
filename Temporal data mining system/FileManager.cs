@@ -49,8 +49,9 @@ namespace Temporal_data_mining_system
 
         public static void saveToCSV(string path, List<ExtractedData> datalist)
         {
-            CsvWriter csvWriter = new CsvWriter(new StreamWriter(path));
-            csvWriter.WriteRecords(datalist);
+            using (StreamWriter sw = new StreamWriter(path))
+            using (CsvWriter csvWriter = new CsvWriter(sw))
+                csvWriter.WriteRecords(datalist);
         }
 
         public static void SaveReportPDF(string text, List<ExtractedData> dataList, string path, MemoryStream objectChart = null, MemoryStream dateChart = null, List<String> statistics = null)
@@ -114,7 +115,7 @@ namespace Temporal_data_mining_system
                 doc.Add(new Phrase(Environment.NewLine));
             }
 
-            if(statistics!=null)
+            if (statistics != null)
             {
                 string statText = "Statistics: " + Environment.NewLine;
                 statistics.ForEach(str => statText += str + Environment.NewLine);
@@ -161,12 +162,15 @@ namespace Temporal_data_mining_system
                 MSWord.Range wrdRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
                 oTable = oDoc.Tables.Add(wrdRng, dataList.Count + 1, columnCount, ref oMissing, ref oMissing);
                 oTable.Range.ParagraphFormat.SpaceAfter = 6;
+                oTable.Borders.InsideLineStyle = MSWord.WdLineStyle.wdLineStyleSingle;
+                oTable.Borders.OutsideLineStyle = MSWord.WdLineStyle.wdLineStyleSingle;
+
 
                 oTable.Cell(1, 1).Range.Text = "Date";
                 oTable.Cell(1, 2).Range.Text = "Object";
                 oTable.Cell(1, 3).Range.Text = "Trend";
                 oTable.Cell(1, 4).Range.Text = "Additional inf.";
-                for (int r = 2; r <= dataList.Count + 1; r++)
+                for (int r = 2; r < dataList.Count + 1; r++)
                 {
                     oTable.Cell(r, 1).Range.Text = dataList[r - 1].Date;
                     oTable.Cell(r, 2).Range.Text = dataList[r - 1].Object;
@@ -179,7 +183,7 @@ namespace Temporal_data_mining_system
                     //Insert a title
                     MSWord.Paragraph oParaTableObjectTitle;
                     oParaTableObjectTitle = oDoc.Content.Paragraphs.Add(ref oMissing);
-                    oParaTableObjectTitle.Range.Text = "Objects chart" + Environment.NewLine;
+                    oParaTableObjectTitle.Range.Text = Environment.NewLine + "Objects chart";
                     oParaTableObjectTitle.Range.Font.Size = 16;
                     oParaTableObjectTitle.Range.Font.Bold = 1;
                     oParaTableObjectTitle.Format.SpaceAfter = 24;    //24 pt spacing after paragraph.
@@ -187,8 +191,9 @@ namespace Temporal_data_mining_system
 
                     System.Drawing.Image img = System.Drawing.Image.FromStream(objectChart);
                     System.Windows.Clipboard.SetDataObject(img);
-                    MSWord.Paragraph oParaObjectPict = oDoc.Content.Paragraphs.Add(oMissing);
+                    MSWord.Paragraph oParaObjectPict = oDoc.Content.Paragraphs.Add(ref oMissing);
                     oParaObjectPict.Range.Paste();
+                    oParaObjectPict.Range.InsertParagraphAfter();
                 }
 
                 if (dateChart != null)
@@ -196,7 +201,7 @@ namespace Temporal_data_mining_system
                     //Insert a title
                     MSWord.Paragraph oParaTableObjectTitle;
                     oParaTableObjectTitle = oDoc.Content.Paragraphs.Add(ref oMissing);
-                    oParaTableObjectTitle.Range.Text = "Dates chart" + Environment.NewLine;
+                    oParaTableObjectTitle.Range.Text = Environment.NewLine + "Dates chart";
                     oParaTableObjectTitle.Range.Font.Size = 16;
                     oParaTableObjectTitle.Range.Font.Bold = 1;
                     oParaTableObjectTitle.Format.SpaceAfter = 24;    //24 pt spacing after paragraph.
@@ -204,8 +209,9 @@ namespace Temporal_data_mining_system
 
                     System.Drawing.Image img = System.Drawing.Image.FromStream(dateChart);
                     System.Windows.Clipboard.SetDataObject(img);
-                    MSWord.Paragraph oParaObjectPict = oDoc.Content.Paragraphs.Add(oMissing);
+                    MSWord.Paragraph oParaObjectPict = oDoc.Content.Paragraphs.Add(ref oMissing);
                     oParaObjectPict.Range.Paste();
+                    oParaObjectPict.Range.InsertParagraphAfter();
                 }
 
 

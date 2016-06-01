@@ -141,7 +141,7 @@ namespace Temporal_data_mining_system
                                         }
                                         else
                                         {
-                                            ExtractedData newData = new ExtractedData();
+                                            ExtractedData newData = new ExtractedData(true);
                                             newData.objects.AddRange(ExtractedTemporalData[dataIndex].objects.GetRange(i, ExtractedTemporalData[dataIndex].objects.Count - i));
                                             ExtractedTemporalData[dataIndex].objects.RemoveRange(i, ExtractedTemporalData[dataIndex].objects.Count - i);
                                             ExtractedTemporalData.Add(newData);
@@ -169,7 +169,7 @@ namespace Temporal_data_mining_system
                                         }
                                         else
                                         {
-                                            ExtractedData newData = new ExtractedData();
+                                            ExtractedData newData = new ExtractedData(true);
                                             newData.trends.AddRange(ExtractedTemporalData[dataIndex].trends.GetRange(i, ExtractedTemporalData[dataIndex].trends.Count - i));
                                             ExtractedTemporalData[dataIndex].trends.RemoveRange(i, ExtractedTemporalData[dataIndex].trends.Count - i);
                                             ExtractedTemporalData.Add(newData);
@@ -196,7 +196,7 @@ namespace Temporal_data_mining_system
                                         }
                                         else
                                         {
-                                            ExtractedData newData = new ExtractedData();
+                                            ExtractedData newData = new ExtractedData(true);
                                             newData.extras.AddRange(ExtractedTemporalData[dataIndex].extras.GetRange(i, ExtractedTemporalData[dataIndex].extras.Count - i));
                                             ExtractedTemporalData[dataIndex].extras.RemoveRange(i, ExtractedTemporalData[dataIndex].extras.Count - i);
                                             ExtractedTemporalData.Add(newData);

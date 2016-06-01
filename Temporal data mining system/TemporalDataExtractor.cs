@@ -85,7 +85,7 @@ namespace Temporal_data_mining_system
             IndexedWord firstRoot = dependencies.getFirstRoot();
             var outEdges = dependencies.getOutEdgesSorted(firstRoot);
             List<ExtractedData> extractedData = new List<ExtractedData>();
-            ExtractedData data = new ExtractedData();
+            ExtractedData data = new ExtractedData(true);
             Word firstRootWord = new Word(firstRoot.originalText(), firstRoot.tag(), "ROOT", sentence.SentenceText.IndexOf(firstRoot.originalText()));
             sentence.AddToWords(firstRootWord);
             data.AddToTrends(firstRootWord);

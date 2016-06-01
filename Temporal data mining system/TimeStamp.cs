@@ -1,5 +1,6 @@
 ﻿namespace Temporal_data_mining_system
 {
+    [System.Serializable()]
     public class TimeStamp
     {
         public string Type { get; set; }

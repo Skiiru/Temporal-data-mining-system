@@ -19,6 +19,7 @@ namespace Temporal_data_mining_system
     {
         List<ExtractedData> extractedData;
         List<ExtractedData> filtredData;
+        List<ExtractedData> emptyList;
         StanfordCoreNLP pipeline;
         AnnotationPipeline sutimePipeline;
         string text;
@@ -35,6 +36,7 @@ namespace Temporal_data_mining_system
         {
             InitializeComponent();
             extractedData = new List<ExtractedData>();
+            emptyList = new List<ExtractedData>();
             text = String.Empty;
             ofdTextFile = new OpenFileDialog();
             sfdResult = new SaveFileDialog();
@@ -107,23 +109,16 @@ namespace Temporal_data_mining_system
             if (filter != string.Empty)
             {
                 filtredData = ExtractedData.Filter(extractedData, filter);
-                if (filtredData == null)
+                if (filtredData.Count == 0)
                 {
-                    filtredData = extractedData;
+                    dgExtractedData.ItemsSource = emptyList;
                 }
-                dgExtractedData.Items.Clear();
-                foreach (ExtractedData data in filtredData)
-                {
-                    dgExtractedData.Items.Add(data);
-                }
+                else
+                    dgExtractedData.ItemsSource = filtredData;
             }
             else
             {
-                dgExtractedData.Items.Clear();
-                foreach (ExtractedData data in extractedData)
-                {
-                    dgExtractedData.Items.Add(data);
-                }
+                dgExtractedData.ItemsSource = extractedData;
             }
         }
 
@@ -179,6 +174,9 @@ namespace Temporal_data_mining_system
                         FillDictionaries();
                     }
                     imageLoading.Visibility = Visibility.Hidden;
+                    accuracy = 100 * ((double)(extractedData.Count - corruptedElements) / (double)extractedData.Count);
+                    accuracy = Math.Round(accuracy, 2);
+                    lbAccuracy.Content = "Total: " + accuracy + "%";
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             else
             {
@@ -203,6 +201,9 @@ namespace Temporal_data_mining_system
                         FillDictionaries();
                     }
                     imageLoading.Visibility = Visibility.Hidden;
+                    accuracy = 100 * ((double)(extractedData.Count - corruptedElements) / (double)extractedData.Count);
+                    accuracy = Math.Round(accuracy, 2);
+                    lbAccuracy.Content = "Total: " + accuracy + "%";
                 }
                 catch (Exception ex)
                 {
@@ -210,7 +211,6 @@ namespace Temporal_data_mining_system
                     imageLoading.Visibility = Visibility.Hidden;
                 }
             }
-
         }
 
         private void DrawObjectsChart()
@@ -315,13 +315,15 @@ namespace Temporal_data_mining_system
 
         private void bOpenFile_Click(object sender, RoutedEventArgs e)
         {
-            ofdTextFile.ShowDialog();
-            DeactivateItems();
-            text = FileManager.ReadFile(ofdTextFile.FileName);
-            tbInputText.Text = text;
-            imageLoading.Visibility = Visibility.Visible;
-            loadPipelines();
-            ActivateItems();
+            if ((bool)ofdTextFile.ShowDialog())
+            {
+                DeactivateItems();
+                text = FileManager.ReadFile(ofdTextFile.FileName);
+                tbInputText.Text = text;
+                imageLoading.Visibility = Visibility.Visible;
+                loadPipelines();
+                ActivateItems();
+            }
         }
 
         private void TabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -332,20 +334,43 @@ namespace Temporal_data_mining_system
         {
             sfdResult.Filter = "JSON|*.json";
             sfdResult.ShowDialog();
-            if (filtredData != null && filtredData.Count > 0 && sfdResult.FileName != string.Empty)
+            if (sfdResult.FileName != string.Empty)
             {
-                FileManager.saveToJSON(sfdResult.FileName, filtredData);
+                if (filtredData != null && filtredData.Count > 0)
+                {
+                    FileManager.saveToJSON(sfdResult.FileName, filtredData);
+                }
+                else if (extractedData != null && extractedData.Count > 0)
+                {
+                    FileManager.saveToJSON(sfdResult.FileName, extractedData);
+                }
+                else
+                    MessageBox.Show("Nothing to save!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            else
+                MessageBox.Show("Path is empty", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+
         }
 
         private void menuSaveToXML_Click(object sender, RoutedEventArgs e)
         {
             sfdResult.Filter = "XML|*.xml";
             sfdResult.ShowDialog();
-            if (filtredData != null && filtredData.Count > 0 && sfdResult.FileName != string.Empty)
+            if (sfdResult.FileName != string.Empty)
             {
-                FileManager.saveToXML(sfdResult.FileName, filtredData);
+                if (filtredData != null && filtredData.Count > 0)
+                {
+                    FileManager.saveToXML(sfdResult.FileName, filtredData);
+                }
+                else if (extractedData != null && extractedData.Count > 0)
+                {
+                    FileManager.saveToXML(sfdResult.FileName, extractedData);
+                }
+                else
+                    MessageBox.Show("Nothing to save!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            else
+                MessageBox.Show("Path is empty", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void tbFilter_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
@@ -360,10 +385,21 @@ namespace Temporal_data_mining_system
         {
             sfdResult.Filter = "CSV|*.csv";
             sfdResult.ShowDialog();
-            if (filtredData != null && filtredData.Count > 0 && sfdResult.FileName != string.Empty)
+            if (sfdResult.FileName != string.Empty)
             {
-                FileManager.saveToCSV(sfdResult.FileName, filtredData);
+                if (filtredData != null && filtredData.Count > 0)
+                {
+                    FileManager.saveToCSV(sfdResult.FileName, filtredData);
+                }
+                else if (extractedData != null && extractedData.Count > 0)
+                {
+                    FileManager.saveToCSV(sfdResult.FileName, extractedData);
+                }
+                else
+                    MessageBox.Show("Nothing to save!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            else
+                MessageBox.Show("Path is empty", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void tbURL_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
@@ -435,24 +471,27 @@ namespace Temporal_data_mining_system
 
         private void tbNotExtracted_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (!(string.IsNullOrEmpty(tbNotExtracted.Text) && string.IsNullOrWhiteSpace(tbNotExtracted.Text)))
-            {
-                try
+            if (extractedData != null)
+                if (!(string.IsNullOrEmpty(tbNotExtracted.Text) && string.IsNullOrWhiteSpace(tbNotExtracted.Text)))
                 {
-                    accuracy = (extractedData.Count - corruptedElements) / (Convert.ToInt32(tbNotExtracted.Text) + extractedData.Count);
+                    try
+                    {
+                        notExracted = Convert.ToInt32(tbNotExtracted.Text);
+                        accuracy = 100 * ((double)(extractedData.Count - corruptedElements) / (double)(notExracted + extractedData.Count));
+                        accuracy = Math.Round(accuracy, 2);
+                        lbAccuracy.Content = "Total: " + accuracy + "%";
+
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                else
+                {
+                    accuracy = (extractedData.Count - corruptedElements) / extractedData.Count;
                     lbAccuracy.Content = "Total: " + accuracy + "%";
-                    notExracted = Convert.ToInt32(tbNotExtracted.Text);
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                accuracy = (extractedData.Count - corruptedElements) / extractedData.Count;
-                lbAccuracy.Content = "Total: " + accuracy + "%";
-            }
         }
 
         private void bSaverReport_Click(object sender, RoutedEventArgs e)
@@ -490,7 +529,6 @@ namespace Temporal_data_mining_system
             else
                 MessageBox.Show("Plese select extension!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        #endregion
 
         private void menuSaveToPDF_Click(object sender, RoutedEventArgs e)
         {
@@ -501,5 +539,13 @@ namespace Temporal_data_mining_system
         {
 
         }
+
+        private void bClearFilter_Click(object sender, RoutedEventArgs e)
+        {
+            filtredData.Clear();
+            dgExtractedData.ItemsSource = extractedData;
+        }
+
+        #endregion
     }
 }

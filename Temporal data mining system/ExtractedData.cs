@@ -5,23 +5,20 @@ namespace Temporal_data_mining_system
 {
     public class ExtractedData
     {
-        [System.ComponentModel.DisplayName("Дата")]
         public string Date { get; set; }
 
-        [System.ComponentModel.DisplayName("Объект")]
         public string Object { get; set; }
 
-        public List<Word> objects { get; set; }
-
-        [System.ComponentModel.DisplayName("Тенденция")]
         public string Trend { get; set; }
 
-        public List<Word> trends { get; set; }
-
-        [System.ComponentModel.DisplayName("Доп. данные")]
         public string Extra { get; set; }
 
-        public List<Word> extras { get; set;}
+        [System.Xml.Serialization.XmlIgnore]
+        public List<Word> objects;
+        [System.Xml.Serialization.XmlIgnore]
+        public List<Word> trends;
+        [System.Xml.Serialization.XmlIgnore]
+        public List<Word> extras;
 
         private void Init()
         {
@@ -48,10 +45,15 @@ namespace Temporal_data_mining_system
                 extras.Add(word);
         }
 
-        public ExtractedData()
+        public ExtractedData() { }
+
+        public ExtractedData(bool clear)
         {
-            Init();
-            Date = Object = Trend = Extra = string.Empty;
+            if (clear)
+            {
+                Init();
+                Date = Object = Trend = Extra = string.Empty;
+            }
         }
 
         public ExtractedData(string trend)
@@ -99,15 +101,12 @@ namespace Temporal_data_mining_system
         {
             List<ExtractedData> result = new List<ExtractedData>();
             Regex regex = new Regex(".*" + filter + ".*");
-            foreach(ExtractedData data in dataList)
+            foreach (ExtractedData data in dataList)
             {
                 if (regex.IsMatch(data.Object) || regex.IsMatch(data.Date))
                     result.Add(data);
             }
-            if (result.Count == 0)
-                return null;
-            else
-                return result;
+            return result;
         }
     }
 }

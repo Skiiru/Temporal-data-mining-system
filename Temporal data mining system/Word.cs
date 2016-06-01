@@ -2,6 +2,7 @@
 
 namespace Temporal_data_mining_system
 {
+    [System.Serializable()]
     public class Word
     {
         public string word { get; set; }
