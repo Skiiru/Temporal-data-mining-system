@@ -23,8 +23,8 @@
         </Grid.RowDefinitions>
         <!--Menu-->
         <Menu  Grid.Row="0" HorizontalAlignment="Left" Margin="5,0,0,0" Padding="0,5" Background="WhiteSmoke" BorderThickness="1,1,1,0">
-            <MenuItem x:Name="menuService" Header="Service" Click="menuService_Click">
-                <MenuItem x:Name="menuOpenFile" Header="Open file"></MenuItem>
+            <MenuItem x:Name="menuService" Header="Service">
+                <MenuItem x:Name="menuOpenFile" Header="Open file" Click="menuOpenFile_Click"></MenuItem>
                 <MenuItem x:Name="menuSave" Header="Save">
                     <MenuItem x:Name="menuSaveToJSON" Header="JSON" Click="menuSaveToJSON_Click"></MenuItem>
                     <MenuItem x:Name="menuSaveToXML" Header="XML" Click="menuSaveToXML_Click"></MenuItem>
@@ -38,7 +38,7 @@
             <MenuItem x:Name="menuExit" Header="Exit" Click="menuExit_Click"></MenuItem>
         </Menu>
         <!--Tabs-->
-        <TabControl x:Name="tabControl" Grid.Row="1" SelectionChanged="TabControl_SelectionChanged">
+        <TabControl x:Name="tabControl" Grid.Row="1">
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="Template">
@@ -89,7 +89,9 @@
                             <DataGridTextColumn Header="Additional" Width="*" Binding="{Binding Path=Extra}"></DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button x:Name="bOpenFile" Click="bOpenFile_Click" Grid.Column="0" Grid.Row="2" MaxWidth="200" Margin="3" VerticalAlignment="Stretch">Open file</Button>
+                    <Button x:Name="bOpenFile" Click="bOpenFile_Click" Grid.Column="0" Grid.Row="2" MaxWidth="200" Margin="3" VerticalAlignment="Stretch">
+                        Open file
+                    </Button>
                     <Image x:Name="imageLoading" gif:ImageBehavior.AnimatedSource="img\loading.gif" Grid.Column="1" Grid.Row="2" Visibility="Hidden"></Image>
                     <Label Grid.Column="0" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0">Filter</Label>
                     <DockPanel Grid.Column="1" Grid.Row="0">
@@ -168,7 +170,7 @@
                         <CheckBox x:Name="cbDateChart" FontSize="14">Dates chart</CheckBox>
                         <CheckBox x:Name="cbStatistick" FontSize="14">Statistics</CheckBox>
                     </StackPanel>
-                    <Button x:Name="bSaverReport" Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" Margin="5" MaxWidth="150" FontSize="14" Click="bSaverReport_Click">Save report</Button>
+                    <Button x:Name="bSaveReport" Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" Margin="5" MaxWidth="150" FontSize="14" Click="bSaveReport_Click">Save report</Button>
                     <Label Grid.Column="3" HorizontalAlignment="Center" Margin="47,5,197,5" FontSize="14">Statistics</Label>
                     <Grid Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2">
                         <Grid.ColumnDefinitions>

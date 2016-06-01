@@ -57,7 +57,8 @@ namespace Temporal_data_mining_system
         public static void SaveReportPDF(string text, List<ExtractedData> dataList, string path, MemoryStream objectChart = null, MemoryStream dateChart = null, List<String> statistics = null)
         {
             var doc = new Document();
-            PdfWriter.GetInstance(doc, new FileStream(path, FileMode.Create));
+            PdfWriter writer = PdfWriter.GetInstance(doc, new FileStream(path, FileMode.Create));
+            writer.StrictImageSequence = true;
             doc.Open();
 
             doc.Add(new Phrase("Text: " + Environment.NewLine + text, new Font(Font.FontFamily.TIMES_ROMAN, 14, Font.NORMAL, BaseColor.BLACK)));
@@ -100,17 +101,15 @@ namespace Temporal_data_mining_system
             //Charts
             if (objectChart != null)
             {
-                doc.Add(new Phrase("Objects chart" + Environment.NewLine, new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
+                doc.Add(new Paragraph(new Phrase("Objects chart" + Environment.NewLine, new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK))));
                 Image img = Image.GetInstance(objectChart.GetBuffer());
-                img.ScalePercent(75f);
                 doc.Add(img);
                 doc.Add(new Phrase(Environment.NewLine));
             }
             if (dateChart != null)
             {
-                doc.Add(new Phrase("Dates chart" + Environment.NewLine, new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK)));
+                doc.Add(new Paragraph(new Phrase("Dates chart" + Environment.NewLine, new Font(Font.FontFamily.TIMES_ROMAN, 16, Font.NORMAL, BaseColor.BLACK))));
                 Image img = Image.GetInstance(dateChart.GetBuffer());
-                img.ScalePercent(75f);
                 doc.Add(img);
                 doc.Add(new Phrase(Environment.NewLine));
             }
